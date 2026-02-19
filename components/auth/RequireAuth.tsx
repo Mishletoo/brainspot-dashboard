@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { loadAuth } from "./storage";
+import { supabase } from "@/lib/supabase/client";
 import type { Role } from "./types";
 
 interface Props {
@@ -15,16 +15,21 @@ export function RequireAuth({ children, requiredRole }: Props) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const auth = loadAuth();
-    if (!auth) {
-      router.replace("/auth/login");
-      return;
-    }
-    if (requiredRole && auth.role !== requiredRole) {
-      router.replace(auth.role === "ADMIN" ? "/dashboard" : "/reports");
-      return;
-    }
-    setReady(true);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        router.replace("/auth/login");
+        return;
+      }
+      if (requiredRole) {
+        const role: Role | undefined =
+          user.user_metadata?.role ?? user.app_metadata?.role;
+        if (role !== requiredRole) {
+          router.replace(role === "ADMIN" ? "/dashboard" : "/reports");
+          return;
+        }
+      }
+      setReady(true);
+    });
   }, [router, requiredRole]);
 
   if (!ready) return null;

@@ -2,18 +2,20 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { loadAuth } from "@/components/auth/storage";
+import { supabase } from "@/lib/supabase/client";
 
 export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    const auth = loadAuth();
-    if (auth) {
-      router.replace(auth.role === "ADMIN" ? "/dashboard" : "/reports");
-    } else {
-      router.replace("/auth/login");
-    }
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        const role = user.user_metadata?.role ?? user.app_metadata?.role;
+        router.replace(role === "ADMIN" ? "/dashboard" : "/reports");
+      } else {
+        router.replace("/auth/login");
+      }
+    });
   }, [router]);
 
   return null;
