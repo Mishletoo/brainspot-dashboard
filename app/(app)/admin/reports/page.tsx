@@ -12,7 +12,7 @@ import {
 } from "@/components/reports/storage";
 import { loadAuth } from "@/components/auth/storage";
 import { loadEmployees } from "@/components/employees/storage";
-import { RequireAuth } from "@/components/auth/RequireAuth";
+import { RequireRole } from "@/components/auth/RequireRole";
 import type { Employee } from "@/components/employees/types";
 
 type Tab = "reports" | "edit-requests";
@@ -562,8 +562,8 @@ function AdminReportsContent() {
 
 export default function AdminReportsPage() {
   return (
-    <RequireAuth requiredRole="ADMIN">
+    <RequireRole requiredRole="ADMIN">
       <AdminReportsContent />
-    </RequireAuth>
+    </RequireRole>
   );
 }

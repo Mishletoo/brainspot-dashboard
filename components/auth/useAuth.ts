@@ -6,8 +6,8 @@ import { loadAuth, clearAuth } from "./storage";
 import type { AuthRecord, Role } from "./types";
 
 function normalizeRole(raw: string | null | undefined): Role {
-  if (raw?.toLowerCase() === "admin") return "admin";
-  return "employee";
+  if (raw?.toLowerCase() === "admin") return "ADMIN";
+  return "EMPLOYEE";
 }
 
 export function useAuth() {
@@ -27,7 +27,7 @@ export function useAuth() {
         console.log("[useAuth] profile =", profile);
         console.log("[useAuth] error =", error);
 
-        let role: Role = "employee";
+        let role: Role = "EMPLOYEE";
 
         if (error) {
           if (error.code === "PGRST116") {

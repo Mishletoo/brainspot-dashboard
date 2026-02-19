@@ -10,8 +10,8 @@ export default function Home() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        const role = user.user_metadata?.role ?? user.app_metadata?.role;
-        router.replace(role === "ADMIN" ? "/dashboard" : "/reports");
+        const role = user?.app_metadata?.role ?? user?.user_metadata?.role ?? null;
+        router.replace(role?.toLowerCase() === "admin" ? "/dashboard" : "/reports");
       } else {
         router.replace("/auth/login");
       }

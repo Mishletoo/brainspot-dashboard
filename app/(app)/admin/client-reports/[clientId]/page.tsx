@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { RequireAuth } from "@/components/auth/RequireAuth";
+import { RequireRole } from "@/components/auth/RequireRole";
 import { ClientReportDetail } from "@/components/client-reports/ClientReportDetail";
 import { buildClientMonthDetail } from "@/components/client-reports/selectors";
 import { getCurrentMonthKey, loadReports, loadEntries } from "@/components/reports/storage";
@@ -102,8 +102,8 @@ function ClientReportDetailContent() {
 
 export default function AdminClientReportDetailPage() {
   return (
-    <RequireAuth requiredRole="ADMIN">
+    <RequireRole requiredRole="ADMIN">
       <ClientReportDetailContent />
-    </RequireAuth>
+    </RequireRole>
   );
 }

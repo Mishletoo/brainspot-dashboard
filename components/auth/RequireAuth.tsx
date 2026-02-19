@@ -20,11 +20,17 @@ export function RequireAuth({ children, requiredRole }: Props) {
         router.replace("/auth/login");
         return;
       }
+
+      const role: string | null =
+        user?.app_metadata?.role ?? user?.user_metadata?.role ?? null;
+
+      if (process.env.NODE_ENV !== "production") {
+        console.log("ROLE", role, user?.app_metadata, user?.user_metadata);
+      }
+
       if (requiredRole) {
-        const role: Role | undefined =
-          user.user_metadata?.role ?? user.app_metadata?.role;
-        if (role !== requiredRole) {
-          router.replace(role === "ADMIN" ? "/dashboard" : "/reports");
+        if (role?.toLowerCase() !== requiredRole.toLowerCase()) {
+          router.replace(role?.toLowerCase() === "admin" ? "/dashboard" : "/reports");
           return;
         }
       }
