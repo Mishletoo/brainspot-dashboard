@@ -16,6 +16,7 @@ const navLinks = [
   { label: "Finance", href: "/finance" },
   { label: "Reports", href: "/reports" },
   { label: "Settings", href: "/settings" },
+  { label: "Profile", href: "/profile" },
 ];
 
 export default function Sidebar() {

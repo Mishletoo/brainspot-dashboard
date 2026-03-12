@@ -69,6 +69,15 @@ export default function InvoiceDetailsPage() {
         return;
       }
 
+      const rawClient = (data as { clients?: { id: string; name: string } | { id: string; name: string }[] }).clients;
+      const client = Array.isArray(rawClient)
+        ? rawClient[0]
+          ? { id: rawClient[0].id, name: rawClient[0].name }
+          : null
+        : rawClient
+          ? { id: rawClient.id, name: rawClient.name }
+          : null;
+
       const mappedInvoice: Invoice = {
         id: data.id,
         invoice_number: data.invoice_number,
@@ -77,7 +86,7 @@ export default function InvoiceDetailsPage() {
         due_date: data.due_date,
         status: data.status,
         notes: data.notes,
-        client: data.clients ? { id: data.clients.id, name: data.clients.name } : null,
+        client,
       };
 
       setInvoice(mappedInvoice);

@@ -62,6 +62,16 @@ export default function ContractDetailsPage() {
         return;
       }
 
+      const relatedClient = (data as any).clients;
+
+      const normalizedClient: Contract["client"] = Array.isArray(relatedClient)
+        ? relatedClient.length > 0
+          ? { id: relatedClient[0].id, name: relatedClient[0].name }
+          : null
+        : relatedClient
+          ? { id: relatedClient.id, name: relatedClient.name }
+          : null;
+
       const mappedContract: Contract = {
         id: data.id,
         contract_name: data.contract_name,
@@ -72,7 +82,7 @@ export default function ContractDetailsPage() {
         notice_period_days: data.notice_period_days,
         reminder_days: data.reminder_days,
         notes: data.notes,
-        client: data.clients ? { id: data.clients.id, name: data.clients.name } : null,
+        client: normalizedClient,
       };
 
       setContract(mappedContract);

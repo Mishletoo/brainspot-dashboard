@@ -500,7 +500,7 @@ export default function WorkReportsPage() {
                   : r.endDate,
               priority:
                 field === "priority"
-                  ? (payload.priority ?? null)
+                  ? (payload.priority != null ? String(payload.priority) : null)
                   : r.priority,
               raw: { ...r.raw, ...payload },
             }
