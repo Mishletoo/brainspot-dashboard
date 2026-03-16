@@ -6,19 +6,10 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 /** Paths that are allowed without a session */
 function isPublicPath(pathname: string): boolean {
-  if (pathname === "/login" || pathname === "/register") return true;
+  if (pathname === "/login") return true;
   if (pathname.startsWith("/_next")) return true;
   if (pathname === "/favicon.ico" || pathname.startsWith("/favicon")) return true;
   return false;
-}
-
-/** Paths that employees (non-admin) are allowed to access */
-const EMPLOYEE_ALLOWED_PATHS = ["/work-reports", "/profile", "/login", "/register"];
-
-function isAllowedForEmployee(pathname: string): boolean {
-  return EMPLOYEE_ALLOWED_PATHS.some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
-  );
 }
 
 function redirectWithCookies(
@@ -77,27 +68,15 @@ export async function middleware(request: NextRequest) {
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  if (employeeError || !employee) {
-    await supabase.auth.signOut();
-    return redirectWithCookies(
-      request,
-      new URL("/login", request.url).toString(),
-      response
-    );
-  }
-
-  const appRole = employee.app_role === "admin" ? "admin" : "employee";
-
-  if (appRole === "admin") {
+  if (employeeError || !employee || employee.app_role !== "admin") {
+    if (!isPublicPath(pathname)) {
+      return redirectWithCookies(
+        request,
+        new URL("/login", request.url).toString(),
+        response
+      );
+    }
     return response;
-  }
-
-  if (!isAllowedForEmployee(pathname)) {
-    return redirectWithCookies(
-      request,
-      new URL("/work-reports", request.url).toString(),
-      response
-    );
   }
 
   return response;

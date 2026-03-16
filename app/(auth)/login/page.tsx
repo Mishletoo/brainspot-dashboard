@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
 const inputClassName =
@@ -153,13 +152,7 @@ export default function LoginPage() {
           </button>
 
           <p className="mt-4 text-center text-xs text-zinc-500">
-            Нямаш акаунт?{" "}
-            <Link
-              href="/register"
-              className="text-zinc-400 underline decoration-zinc-600 underline-offset-2 hover:text-zinc-300 hover:decoration-zinc-500"
-            >
-              Създай акаунт
-            </Link>
+            Нямаш акаунт? Свържи се с администратор, за да ти бъде създаден профил.
           </p>
         </form>
       </div>
