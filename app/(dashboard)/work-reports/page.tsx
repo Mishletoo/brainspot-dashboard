@@ -159,6 +159,7 @@ function taskStatusRowClasses(status: string): string {
 export default function WorkReportsPage() {
   const [employeeId, setEmployeeId] = useState<string | null>(null);
   const [monthlyReportId, setMonthlyReportId] = useState<string | null>(null);
+  const [monthlyReportStatus, setMonthlyReportStatus] = useState<"draft" | "submitted">("draft");
   const [rows, setRows] = useState<WorkItem[]>([]);
   const [clients, setClients] = useState<LookupItem[]>([]);
   const [services, setServices] = useState<LookupItem[]>([]);
@@ -186,6 +187,8 @@ export default function WorkReportsPage() {
   const [draftEdits, setDraftEdits] = useState<Record<string, DraftEditState>>({});
   const [editingField, setEditingField] = useState<{ rowId: string; field: "hours" | "notes" | "date" | "priority" } | null>(null);
   const [savingInlineFields, setSavingInlineFields] = useState<Record<string, boolean>>({});
+  const [showUnfinishedConfirm, setShowUnfinishedConfirm] = useState(false);
+  const [unfinishedDraftCount, setUnfinishedDraftCount] = useState(0);
 
   const validTaskStatus = (s: string) =>
     TASK_STATUS_OPTIONS.some((o) => o.value === s) ? s : "waiting";
@@ -254,6 +257,8 @@ export default function WorkReportsPage() {
 
       const currentMonthlyReportId = String(monthlyReport.id ?? "");
       setMonthlyReportId(currentMonthlyReportId);
+      const statusText = String(monthlyReport.status ?? "draft").toLowerCase() === "submitted" ? "submitted" : "draft";
+      setMonthlyReportStatus(statusText);
 
       const itemsResult = await supabase.from("work_report_items").select("*").eq("monthly_report_id", currentMonthlyReportId);
       if (itemsResult.error) {
@@ -270,8 +275,8 @@ export default function WorkReportsPage() {
         taskId: row.task_id ? String(row.task_id) : null,
         hours: parseHours(row.hours),
         notes: typeof row.notes === "string" ? row.notes : "",
-        taskStatus: String(row.task_status ?? row.status ?? "draft"),
-        status: normalizeStatus(row),
+        taskStatus: String(row.task_status ?? "waiting"),
+        status: statusText === "submitted" ? "sent" : "draft",
         startDate: row.start_date && typeof row.start_date === "string" ? String(row.start_date).slice(0, 10) : null,
         endDate: row.end_date && typeof row.end_date === "string" ? String(row.end_date).slice(0, 10) : null,
         priority: row.priority && typeof row.priority === "string" ? row.priority : null,
@@ -347,8 +352,8 @@ export default function WorkReportsPage() {
       taskId: row.task_id ? String(row.task_id) : null,
       hours: parseHours(row.hours),
       notes: typeof row.notes === "string" ? row.notes : "",
-      taskStatus: String(row.task_status ?? row.status ?? "waiting"),
-      status: normalizeStatus(row),
+      taskStatus: String(row.task_status ?? "waiting"),
+      status: monthlyReportStatus === "submitted" ? "sent" : "draft",
       startDate: row.start_date && typeof row.start_date === "string" ? String(row.start_date).slice(0, 10) : null,
       endDate: row.end_date && typeof row.end_date === "string" ? String(row.end_date).slice(0, 10) : null,
       priority: row.priority && typeof row.priority === "string" ? row.priority : null,
@@ -514,6 +519,7 @@ export default function WorkReportsPage() {
   const handleAddRow = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!monthlyReportId) return;
+    if (monthlyReportStatus === "submitted") return;
 
     setErrorMessage("");
     setSuccessMessage("");
@@ -570,44 +576,36 @@ export default function WorkReportsPage() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    for (const row of draftRows) {
-      const payload: Record<string, unknown> = {};
-      const keys = new Set(Object.keys(row.raw));
-
-      if (keys.has("status")) payload.status = "sent";
-      if (keys.has("task_status")) payload.task_status = "sent";
-      if (keys.has("report_status")) payload.report_status = "sent";
-      if (keys.has("is_submitted")) payload.is_submitted = true;
-      if (keys.has("submitted")) payload.submitted = true;
-      if (keys.has("is_locked")) payload.is_locked = true;
-      if (keys.has("locked")) payload.locked = true;
-
-      if (Object.keys(payload).length === 0) {
-        payload.status = "sent";
-      }
-
-      const updateResult = await supabase.from("work_report_items").update(payload).eq("id", row.id);
-      if (updateResult.error) {
-        setErrorMessage("Не успяхме да изпратим редовете за месеца.");
-        setIsSaving(false);
-        return;
-      }
+    const { error } = await supabase.from("monthly_reports").update({ status: "submitted" }).eq("id", monthlyReportId);
+    if (error) {
+      setErrorMessage(`Не успяхме да изпратим месеца. Детайли: ${error.message}`);
+      setIsSaving(false);
+      return;
     }
 
-    const reportPayloadVariants: Record<string, unknown>[] = [
-      { status: "sent", is_locked: true, locked: true, is_submitted: true, submitted: true },
-      { report_status: "sent", is_locked: true, locked: true },
-      { status: "sent" },
-    ];
-
-    for (const payload of reportPayloadVariants) {
-      const result = await supabase.from("monthly_reports").update(payload).eq("id", monthlyReportId);
-      if (!result.error) break;
-    }
-
+    setMonthlyReportStatus("submitted");
     setSuccessMessage("Месецът е изпратен и заключен.");
     await reloadItems();
     setIsSaving(false);
+  };
+
+  const handleSubmitWithUnfinishedCheck = () => {
+    if (!monthlyReportId || draftRows.length === 0) return;
+
+    const unfinishedCount = draftRows.filter((row) => validTaskStatus(row.taskStatus) !== "done").length;
+
+    if (unfinishedCount === 0) {
+      void handleSendAndLock();
+      return;
+    }
+
+    setUnfinishedDraftCount(unfinishedCount);
+    setShowUnfinishedConfirm(true);
+  };
+
+  const handleConfirmSubmitMonth = () => {
+    setShowUnfinishedConfirm(false);
+    void handleSendAndLock();
   };
 
   const renderRowCard = (row: WorkItem, readOnly: boolean) => {
@@ -915,7 +913,17 @@ export default function WorkReportsPage() {
             <div className="space-y-4 xl:col-span-2">
               <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
                 <h2 className="text-base font-semibold text-white">Добави ред</h2>
-                <form onSubmit={handleAddRow} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                {monthlyReportStatus === "submitted" && (
+                  <p className="mt-2 rounded-lg border border-amber-700/70 bg-amber-950/40 px-3 py-2 text-sm text-amber-100">
+                    Този месец е изпратен и заключен. Не могат да се добавят нови задачи.
+                  </p>
+                )}
+                <form
+                  onSubmit={handleAddRow}
+                  className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2"
+                  aria-disabled={monthlyReportStatus === "submitted"}
+                >
+                  <fieldset disabled={monthlyReportStatus === "submitted" || isSaving} className="contents">
                   <label className="flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Клиент</span>
                     <select
@@ -1019,12 +1027,13 @@ export default function WorkReportsPage() {
                   <div className="md:col-span-2">
                     <button
                       type="submit"
-                      disabled={isSaving}
+                      disabled={isSaving || monthlyReportStatus === "submitted"}
                       className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-200 disabled:opacity-60"
                     >
                       Добави ред
                     </button>
                   </div>
+                  </fieldset>
                 </form>
               </article>
 
@@ -1173,8 +1182,8 @@ export default function WorkReportsPage() {
 
               <button
                 type="button"
-                onClick={handleSendAndLock}
-                disabled={isSaving || draftRows.length === 0}
+                onClick={handleSubmitWithUnfinishedCheck}
+                disabled={isSaving || draftRows.length === 0 || monthlyReportStatus === "submitted"}
                 className="w-full rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 disabled:opacity-50"
               >
                 Изпрати и заключи месеца
@@ -1183,6 +1192,35 @@ export default function WorkReportsPage() {
           </div>
         )}
       </section>
+
+      {showUnfinishedConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold text-white">Има незавършени задачи</h2>
+            <p className="mt-3 text-sm text-zinc-300">
+              Имате {unfinishedDraftCount}{" "}
+              {unfinishedDraftCount === 1 ? "задача, която не е със статус „приключена“." : "задачи, които не са със статус „приключена“."}
+              {" "}Сигурни ли сте, че искате да изпратите и заключите месеца?
+            </p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowUnfinishedConfirm(false)}
+                className="inline-flex justify-center rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-zinc-800"
+              >
+                Върни се
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSubmitMonth}
+                className="inline-flex justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-200"
+              >
+                Все пак изпрати
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

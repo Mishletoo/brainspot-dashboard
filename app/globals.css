@@ -25,6 +25,60 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Temporary export-only styles for client report PDF.
+   These use only simple hex colors so that html2canvas/html2pdf
+   do not need to resolve advanced color functions (oklab/oklch). */
+.pdf-export-mode #client-report-preview {
+  background-color: #ffffff !important;
+  color: #111827 !important; /* zinc-900-ish */
+}
+
+.pdf-export-mode #client-report-preview * {
+  color: #111827 !important;
+  border-color: #e5e7eb !important; /* gray-200 */
+}
+
+.pdf-export-mode #client-report-preview section,
+.pdf-export-mode #client-report-preview div {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+}
+
+.pdf-export-mode #client-report-preview h1,
+.pdf-export-mode #client-report-preview h2,
+.pdf-export-mode #client-report-preview h3,
+.pdf-export-mode #client-report-preview h4,
+.pdf-export-mode #client-report-preview h5,
+.pdf-export-mode #client-report-preview h6 {
+  color: #111827 !important;
+}
+
+.pdf-export-mode #client-report-preview table {
+  background-color: #ffffff !important;
+  border-collapse: collapse !important;
+}
+
+.pdf-export-mode #client-report-preview th {
+  background-color: #f3f4f6 !important; /* gray-100 */
+  border: 1px solid #e5e7eb !important;
+  color: #111827 !important;
+}
+
+.pdf-export-mode #client-report-preview td {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  color: #111827 !important;
+}
+
+.pdf-export-mode #client-report-preview tr:nth-child(even) td {
+  background-color: #f9fafb !important; /* gray-50 */
+}
+
+/* Hide interactive controls inside the preview in the exported PDF. */
+.pdf-export-mode #client-report-preview button {
+  display: none !important;
+}
+
 input[type="number"] {
   appearance: textfield;
   -moz-appearance: textfield;
