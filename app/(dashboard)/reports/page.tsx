@@ -104,6 +104,14 @@ function parseHours(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+const REPORT_SUBMITTED_STATUSES = new Set(["submitted", "pending_review", "approved"]);
+function reportIsSubmitted(row: Record<string, unknown>): boolean {
+  const status = String(row.status ?? "").toLowerCase().trim();
+  const submittedAt = row.submitted_at;
+  const hasSubmittedAt = typeof submittedAt === "string" && submittedAt.trim().length > 0;
+  return hasSubmittedAt || REPORT_SUBMITTED_STATUSES.has(status);
+}
+
 function formatHours(value: number) {
   return Number.isInteger(value) ? `${value}` : value.toFixed(2);
 }
@@ -274,8 +282,7 @@ export default function ReportsPage() {
 
       const submittedReports = (reportsData ?? [])
         .filter((row: Record<string, unknown>) => {
-          const statusText = String(row.status ?? "").toLowerCase();
-          return statusText === "submitted" && monthMatchesRow(row, monthValue);
+          return reportIsSubmitted(row) && monthMatchesRow(row, monthValue);
         })
         .map((row: Record<string, unknown>) => row);
 

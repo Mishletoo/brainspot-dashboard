@@ -1,10 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { resolveAppRole, type AppRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabaseClient";
 
 type LookupItem = { id: string; name: string };
+type EmployeeOption = { id: string; name: string };
+type SelectOption = { value: string; label: string };
 
 type WorkItem = {
   id: string;
@@ -32,6 +35,168 @@ type MonthlyAdSpendState = {
   metaAdsSpend: string;
   googleAdsSpend: string;
 };
+
+type CustomSelectProps = {
+  id?: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: SelectOption[];
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  buttonClassName?: string;
+};
+
+function CustomSelect({
+  id,
+  value,
+  onChange,
+  options,
+  placeholder = "Избери",
+  disabled = false,
+  className = "",
+  buttonClassName = "",
+}: CustomSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const selectedOption = options.find((option) => option.value === value) ?? null;
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (rootRef.current && target && !rootRef.current.contains(target)) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("mousedown", handleOutsideClick);
+    return () => window.removeEventListener("mousedown", handleOutsideClick);
+  }, [isOpen]);
+
+  const triggerClasses = [
+    "flex w-full items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition-colors focus-visible:border-zinc-500",
+    disabled ? "opacity-60 cursor-not-allowed" : "hover:border-zinc-500/80",
+    buttonClassName,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <div ref={rootRef} className={`relative ${className}`}>
+      <button
+        id={id}
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen((prev) => !prev)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setIsOpen(false);
+          }
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            if (!disabled) setIsOpen((prev) => !prev);
+          }
+          if (event.key === "ArrowDown" && !isOpen) {
+            event.preventDefault();
+            if (!disabled) setIsOpen(true);
+          }
+        }}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        className={triggerClasses}
+      >
+        <span className="truncate">{selectedOption?.label ?? placeholder}</span>
+        <span className="ml-2 text-xs text-zinc-400">{isOpen ? "▲" : "▼"}</span>
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 z-40 mt-1 max-h-60 overflow-auto rounded-lg border border-zinc-700 bg-zinc-950 p-1 shadow-xl">
+          <ul role="listbox" aria-labelledby={id} className="space-y-0.5">
+            {options.map((option) => {
+              const isActive = option.value === value;
+              return (
+                <li key={option.value}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    onClick={() => {
+                      onChange(option.value);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full rounded-md px-2.5 py-1.5 text-left text-sm transition-colors ${
+                      isActive
+                        ? "bg-zinc-800 text-zinc-100"
+                        : "text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type MonthState = {
+  status: string;
+  submittedAt: string | null;
+  lockedAt: string | null;
+  isSubmitted: boolean;
+  isLocked: boolean;
+  isEditable: boolean;
+};
+
+const MONTH_SUBMITTED_STATUSES = new Set(["submitted", "pending_review", "approved"]);
+const MONTH_LOCKED_STATUSES = new Set(["locked", "approved", "finalized"]);
+
+function normalizeMonthStatus(value: unknown): string {
+  const normalized = String(value ?? "").toLowerCase().trim();
+  return normalized || "draft";
+}
+
+function parseNullableDateTime(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+
+function buildMonthState(row: Record<string, unknown> | null): MonthState {
+  const status = normalizeMonthStatus(row?.status);
+  const submittedAt = parseNullableDateTime(row?.submitted_at);
+  const lockedAt = parseNullableDateTime(row?.locked_at);
+  const isSubmitted = Boolean(submittedAt) || MONTH_SUBMITTED_STATUSES.has(status);
+  const isLocked = Boolean(lockedAt) || MONTH_LOCKED_STATUSES.has(status);
+
+  return {
+    status,
+    submittedAt,
+    lockedAt,
+    isSubmitted,
+    isLocked,
+    isEditable: !isSubmitted && !isLocked,
+  };
+}
+
+function monthStatusLabel(state: MonthState): string {
+  if (state.isLocked) return "Заключен";
+  if (state.status === "approved") return "Одобрен";
+  if (state.status === "rejected" || state.status === "edit_requested") return "Върнат за корекция";
+  if (state.isSubmitted) return "Изпратен за преглед";
+  return "Чернова";
+}
+
+function monthStatusBadgeClasses(state: MonthState): string {
+  if (state.isLocked) return "border-rose-700/60 bg-rose-950/40 text-rose-100";
+  if (state.status === "approved") return "border-emerald-700/60 bg-emerald-950/40 text-emerald-100";
+  if (state.status === "rejected" || state.status === "edit_requested") return "border-amber-700/60 bg-amber-950/40 text-amber-100";
+  if (state.isSubmitted) return "border-sky-700/60 bg-sky-950/40 text-sky-100";
+  return "border-zinc-700/70 bg-zinc-900 text-zinc-100";
+}
 
 const PRIORITY_OPTIONS: { value: string; label: string }[] = [
   { value: "low", label: "нисък" },
@@ -100,34 +265,6 @@ function parseMoneyInput(value: string) {
   return parsed;
 }
 
-function normalizeStatus(row: Record<string, unknown>): "draft" | "sent" {
-  const statusText = String(row.status ?? row.task_status ?? row.report_status ?? "").toLowerCase();
-  if (["sent", "submitted", "locked", "final"].includes(statusText)) return "sent";
-  if (Boolean(row.is_submitted) || Boolean(row.submitted) || Boolean(row.is_locked) || Boolean(row.locked)) return "sent";
-  return "draft";
-}
-
-function monthMatchesRow(row: Record<string, unknown>, monthValue: string) {
-  const { startIso, endIso, year, month } = monthBounds(monthValue);
-
-  const dateKeys = ["report_month", "month_start", "report_date", "created_at"];
-  for (const key of dateKeys) {
-    const value = row[key];
-    if (typeof value === "string" && value.length >= 10) {
-      const dateValue = value.slice(0, 10);
-      if (dateValue >= startIso && dateValue <= endIso) return true;
-    }
-  }
-
-  const rowYear = Number(row.report_year ?? row.year);
-  const rowMonth = Number(row.report_month_number ?? row.month);
-  if (Number.isFinite(rowYear) && Number.isFinite(rowMonth)) {
-    return rowYear === year && rowMonth === month;
-  }
-
-  return false;
-}
-
 function monthLabel(monthValue: string) {
   const [year, month] = monthValue.split("-");
   const date = new Date(Number(year), Number(month) - 1, 1);
@@ -170,9 +307,11 @@ function taskStatusRowClasses(status: string): string {
 }
 
 export default function WorkReportsPage() {
+  const [currentRole, setCurrentRole] = useState<AppRole>("employee");
+  const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
   const [employeeId, setEmployeeId] = useState<string | null>(null);
   const [monthlyReportId, setMonthlyReportId] = useState<string | null>(null);
-  const [monthlyReportStatus, setMonthlyReportStatus] = useState<"draft" | "submitted">("draft");
+  const [monthState, setMonthState] = useState<MonthState>(() => buildMonthState(null));
   const [rows, setRows] = useState<WorkItem[]>([]);
   const [clients, setClients] = useState<LookupItem[]>([]);
   const [services, setServices] = useState<LookupItem[]>([]);
@@ -221,21 +360,54 @@ export default function WorkReportsPage() {
       setIsLoading(true);
       setErrorMessage("");
 
-      const [employeeResult, clientsResult, servicesResult, tasksResult] = await Promise.all([
-        supabase.from("employees").select("id").limit(1),
+      const [
+        authUserResult,
+        employeesResult,
+        clientsResult,
+        servicesResult,
+        tasksResult,
+      ] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.from("employees").select("id, first_name, last_name, email, auth_user_id, app_role").order("created_at", { ascending: false }),
         supabase.from("clients").select("id, name").order("name", { ascending: true }),
         supabase.from("services").select("id, name").order("name", { ascending: true }),
         supabase.from("tasks").select("id, name").order("name", { ascending: true }),
       ]);
 
-      if (employeeResult.error || clientsResult.error || servicesResult.error || tasksResult.error) {
+      if (employeesResult.error || clientsResult.error || servicesResult.error || tasksResult.error) {
         setErrorMessage("Не успяхме да заредим началните данни.");
         setIsLoading(false);
         return;
       }
 
-      const employee = (employeeResult.data ?? [])[0];
-      setEmployeeId(employee?.id ? String(employee.id) : null);
+      const authUser = authUserResult.data.user;
+      const allEmployees = (employeesResult.data ?? []) as Record<string, unknown>[];
+      const options = allEmployees.map((row) => {
+        const firstName = typeof row.first_name === "string" ? row.first_name : "";
+        const lastName = typeof row.last_name === "string" ? row.last_name : "";
+        const fullName = `${firstName} ${lastName}`.trim();
+        return {
+          id: String(row.id ?? ""),
+          name: fullName || (typeof row.email === "string" ? row.email : "Без име"),
+        };
+      }).filter((item) => item.id);
+      setEmployeeOptions(options);
+
+      let selfRow: Record<string, unknown> | undefined;
+      if (authUser?.id) {
+        selfRow = allEmployees.find((row) => String(row.auth_user_id ?? "") === authUser.id);
+      }
+      if (!selfRow && authUser?.email) {
+        selfRow = allEmployees.find((row) => String(row.email ?? "").toLowerCase() === authUser.email?.toLowerCase());
+      }
+      const selfEmployeeId = selfRow?.id ? String(selfRow.id) : null;
+      setCurrentRole(resolveAppRole(selfRow?.app_role));
+
+      if (selfEmployeeId) {
+        setEmployeeId(selfEmployeeId);
+      } else {
+        setEmployeeId(options[0]?.id ?? null);
+      }
       setClients((clientsResult.data ?? []).map((x) => ({ id: String(x.id), name: String(x.name) })));
       const mappedServices = (servicesResult.data ?? []).map((x) => ({ id: String(x.id), name: String(x.name) }));
       setServices(mappedServices);
@@ -258,20 +430,31 @@ export default function WorkReportsPage() {
       setErrorMessage("");
       setSuccessMessage("");
 
-      const monthlyReportsResult = await supabase.from("monthly_reports").select("*");
+      const { year, month } = monthBounds(monthValue);
+      const monthlyReportsResult = await supabase
+        .from("monthly_reports")
+        .select("*")
+        .eq("employee_id", employeeId)
+        .eq("report_year", year)
+        .eq("report_month", month)
+        .maybeSingle();
       if (monthlyReportsResult.error) {
         setErrorMessage("Не успяхме да заредим monthly_reports.");
         setIsLoading(false);
         return;
       }
 
-      const allMonthlyReports = (monthlyReportsResult.data ?? []) as Record<string, unknown>[];
-      let monthlyReport =
-        allMonthlyReports.find((row) => String(row.employee_id ?? "") === employeeId && monthMatchesRow(row, monthValue)) ?? null;
+      let monthlyReport = (monthlyReportsResult.data as Record<string, unknown> | null) ?? null;
 
       if (!monthlyReport) {
-        const { year, month } = monthBounds(monthValue);
-        const insertPayload = { employee_id: employeeId, report_month: month, report_year: year, status: "draft" };
+        const insertPayload = {
+          employee_id: employeeId,
+          report_month: month,
+          report_year: year,
+          status: "draft",
+          submitted_at: null,
+          locked_at: null,
+        };
         const insertResult = await supabase.from("monthly_reports").insert(insertPayload).select("*").limit(1).single();
         if (!insertResult.error && insertResult.data) {
           monthlyReport = insertResult.data as Record<string, unknown>;
@@ -285,8 +468,8 @@ export default function WorkReportsPage() {
 
       const currentMonthlyReportId = String(monthlyReport.id ?? "");
       setMonthlyReportId(currentMonthlyReportId);
-      const statusText = String(monthlyReport.status ?? "draft").toLowerCase() === "submitted" ? "submitted" : "draft";
-      setMonthlyReportStatus(statusText);
+      const resolvedMonthState = buildMonthState(monthlyReport);
+      setMonthState(resolvedMonthState);
 
       const itemsResult = await supabase.from("work_report_items").select("*").eq("monthly_report_id", currentMonthlyReportId);
       if (itemsResult.error) {
@@ -304,7 +487,7 @@ export default function WorkReportsPage() {
         hours: parseHours(row.hours),
         notes: typeof row.notes === "string" ? row.notes : "",
         taskStatus: String(row.task_status ?? "waiting"),
-        status: statusText === "submitted" ? "sent" : "draft",
+        status: resolvedMonthState.isSubmitted || resolvedMonthState.isLocked ? "sent" : "draft",
         startDate: row.start_date && typeof row.start_date === "string" ? String(row.start_date).slice(0, 10) : null,
         endDate: row.end_date && typeof row.end_date === "string" ? String(row.end_date).slice(0, 10) : null,
         priority: row.priority && typeof row.priority === "string" ? row.priority : null,
@@ -367,6 +550,37 @@ export default function WorkReportsPage() {
   const clientById = useMemo(() => new Map(clients.map((item) => [item.id, item.name])), [clients]);
   const serviceById = useMemo(() => new Map(services.map((item) => [item.id, item.name])), [services]);
   const taskById = useMemo(() => new Map(tasks.map((item) => [item.id, item.name])), [tasks]);
+  const employeeById = useMemo(() => new Map(employeeOptions.map((item) => [item.id, item.name])), [employeeOptions]);
+  const selectedEmployeeName = employeeId ? employeeById.get(employeeId) ?? "—" : "—";
+
+  const employeeSelectOptions = useMemo<SelectOption[]>(
+    () => employeeOptions.map((employee) => ({ value: employee.id, label: employee.name })),
+    [employeeOptions]
+  );
+  const clientSelectOptions = useMemo<SelectOption[]>(
+    () => clients.map((client) => ({ value: client.id, label: client.name })),
+    [clients]
+  );
+  const serviceSelectOptions = useMemo<SelectOption[]>(
+    () => services.map((service) => ({ value: service.id, label: service.name })),
+    [services]
+  );
+  const taskSelectOptions = useMemo<SelectOption[]>(
+    () => tasks.map((task) => ({ value: task.id, label: task.name })),
+    [tasks]
+  );
+  const prioritySelectOptions = useMemo<SelectOption[]>(
+    () => PRIORITY_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+    []
+  );
+  const draftStatusFilterOptions = useMemo<SelectOption[]>(
+    () => [{ value: "", label: "Всички статуси" }, ...TASK_STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label }))],
+    []
+  );
+  const clientFilterOptions = useMemo<SelectOption[]>(
+    () => [{ value: "", label: "Всички клиенти" }, ...clients.map((client) => ({ value: client.id, label: client.name }))],
+    [clients]
+  );
 
   const draftRows = useMemo(() => rows.filter((row) => row.status === "draft"), [rows]);
   const sentRows = useMemo(() => rows.filter((row) => row.status === "sent"), [rows]);
@@ -426,7 +640,7 @@ export default function WorkReportsPage() {
       hours: parseHours(row.hours),
       notes: typeof row.notes === "string" ? row.notes : "",
       taskStatus: String(row.task_status ?? "waiting"),
-      status: monthlyReportStatus === "submitted" ? "sent" : "draft",
+      status: monthState.isSubmitted || monthState.isLocked ? "sent" : "draft",
       startDate: row.start_date && typeof row.start_date === "string" ? String(row.start_date).slice(0, 10) : null,
       endDate: row.end_date && typeof row.end_date === "string" ? String(row.end_date).slice(0, 10) : null,
       priority: row.priority && typeof row.priority === "string" ? row.priority : null,
@@ -592,7 +806,7 @@ export default function WorkReportsPage() {
   const handleAddRow = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!monthlyReportId) return;
-    if (monthlyReportStatus === "submitted") return;
+    if (!monthState.isEditable) return;
 
     setErrorMessage("");
     setSuccessMessage("");
@@ -699,14 +913,24 @@ export default function WorkReportsPage() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    const { error } = await supabase.from("monthly_reports").update({ status: "submitted" }).eq("id", monthlyReportId);
+    const nowIso = new Date().toISOString();
+    const { error } = await supabase
+      .from("monthly_reports")
+      .update({ status: "submitted", submitted_at: nowIso, locked_at: nowIso })
+      .eq("id", monthlyReportId);
     if (error) {
       setErrorMessage(`Не успяхме да изпратим месеца. Детайли: ${error.message}`);
       setIsSaving(false);
       return;
     }
 
-    setMonthlyReportStatus("submitted");
+    setMonthState(
+      buildMonthState({
+        status: "submitted",
+        submitted_at: nowIso,
+        locked_at: nowIso,
+      })
+    );
     setSuccessMessage("Месецът е изпратен и заключен.");
     await reloadItems();
     setIsSaving(false);
@@ -729,6 +953,44 @@ export default function WorkReportsPage() {
   const handleConfirmSubmitMonth = () => {
     setShowUnfinishedConfirm(false);
     void handleSendAndLock();
+  };
+
+  const handleAdminUnlockMonth = async () => {
+    if (currentRole !== "admin" || !monthlyReportId) return;
+    setIsSaving(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    const nextStatus =
+      monthState.status === "approved" || monthState.status === "finalized" || monthState.status === "locked"
+        ? "edit_requested"
+        : "draft";
+
+    const { error } = await supabase
+      .from("monthly_reports")
+      .update({
+        submitted_at: null,
+        locked_at: null,
+        status: nextStatus,
+      })
+      .eq("id", monthlyReportId);
+
+    if (error) {
+      setErrorMessage(`Не успяхме да отключим месеца. ${error.message}`);
+      setIsSaving(false);
+      return;
+    }
+
+    setMonthState(
+      buildMonthState({
+        status: nextStatus,
+        submitted_at: null,
+        locked_at: null,
+      })
+    );
+    setSuccessMessage("Месецът е отключен. Записите са запазени.");
+    await reloadItems();
+    setIsSaving(false);
   };
 
   const renderRowCard = (row: WorkItem, readOnly: boolean) => {
@@ -1003,23 +1265,44 @@ export default function WorkReportsPage() {
   return (
     <div className="flex flex-col gap-4">
       <section className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-100 shadow-xl md:p-6">
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-          <div>
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0">
             <h1 className="text-2xl font-semibold text-white">Отчет за месец</h1>
             <p className="text-sm text-zinc-400">Привет!👋 ☕ Не забравяй – отчетите не се пишат сами… за съжаление 😄</p>
           </div>
 
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
-            <label htmlFor="month" className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">
-              Месец
-            </label>
-            <input
-              id="month"
-              type="month"
-              value={monthValue}
-              onChange={(event) => setMonthValue(event.target.value)}
-              className="rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-            />
+          <div className={`grid w-full gap-3 md:w-auto ${currentRole === "admin" ? "md:grid-cols-2" : "md:grid-cols-1"}`}>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
+              <label htmlFor="month" className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">
+                Месец
+              </label>
+              <input
+                id="month"
+                type="month"
+                value={monthValue}
+                onChange={(event) => setMonthValue(event.target.value)}
+                className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:border-zinc-500 md:min-w-[170px]"
+              />
+            </div>
+            {currentRole === "admin" && employeeSelectOptions.length > 1 && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
+                <label htmlFor="employee" className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">
+                  Служител
+                </label>
+                <CustomSelect
+                  id="employee"
+                  value={employeeId ?? ""}
+                  onChange={(nextEmployeeId) => setEmployeeId(nextEmployeeId || null)}
+                  options={employeeSelectOptions}
+                  className="md:min-w-[220px]"
+                />
+              </div>
+            )}
+            {(currentRole !== "admin" || employeeSelectOptions.length <= 1) && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300">
+                <p className="truncate text-sm text-zinc-100">Служител: {selectedEmployeeName}</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1032,8 +1315,8 @@ export default function WorkReportsPage() {
         )}
 
         {!isLoading && !errorMessage && (
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <div className="space-y-4 xl:col-span-2">
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+            <div className="space-y-3 xl:col-span-2">
               <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
                 <h2 className="text-base font-semibold text-white">Рекламен бюджет за месеца</h2>
                 <p className="mt-1 text-sm text-zinc-500">{monthLabel(monthValue)}</p>
@@ -1041,23 +1324,15 @@ export default function WorkReportsPage() {
                 <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
                   <label className="flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Клиент</span>
-                    <select
+                    <CustomSelect
                       value={spendClientId}
-                      onChange={(event) => {
-                        const nextClientId = event.target.value;
+                      onChange={(nextClientId) => {
                         setSpendClientId(nextClientId);
                         setFormValues((prev) => ({ ...prev, clientId: nextClientId }));
                         setAdSpendMessage("");
                       }}
-                      className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                    >
-                      <option value="">Избери клиент</option>
-                      {clients.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                    </select>
+                      options={[{ value: "", label: "Избери клиент" }, ...clientSelectOptions]}
+                    />
                   </label>
 
                   <label className="flex flex-col gap-1">
@@ -1106,71 +1381,49 @@ export default function WorkReportsPage() {
 
               <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
                 <h2 className="text-base font-semibold text-white">Добави ред</h2>
-                {monthlyReportStatus === "submitted" && (
+                {!monthState.isEditable && (
                   <p className="mt-2 rounded-lg border border-amber-700/70 bg-amber-950/40 px-3 py-2 text-sm text-amber-100">
-                    Този месец е изпратен и заключен. Не могат да се добавят нови задачи.
+                    Този месец е със статус „{monthStatusLabel(monthState)}“ и не може да се редактира.
                   </p>
                 )}
                 <form
                   onSubmit={handleAddRow}
                   className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2"
-                  aria-disabled={monthlyReportStatus === "submitted"}
+                  aria-disabled={!monthState.isEditable}
                 >
-                  <fieldset disabled={monthlyReportStatus === "submitted" || isSaving} className="contents">
+                  <fieldset disabled={!monthState.isEditable || isSaving} className="contents">
                   <label className="flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Клиент</span>
-                    <select
+                    <CustomSelect
                       value={formValues.clientId}
-                      onChange={(event) => {
-                        const nextClientId = event.target.value;
+                      onChange={(nextClientId) => {
                         setFormValues((prev) => ({ ...prev, clientId: nextClientId }));
                         setSpendClientId(nextClientId);
                         setAdSpendMessage("");
                       }}
-                      className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                      required
-                    >
-                      <option value="">Избери клиент</option>
-                      {clients.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                    </select>
+                      options={[{ value: "", label: "Избери клиент" }, ...clientSelectOptions]}
+                      disabled={!monthState.isEditable || isSaving}
+                    />
                   </label>
 
                   <label className="flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Услуга</span>
-                    <select
+                    <CustomSelect
                       value={formValues.serviceId}
-                      onChange={(event) => setFormValues((prev) => ({ ...prev, serviceId: event.target.value }))}
-                      className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                      required
-                    >
-                      <option value="">Избери услуга</option>
-                      {services.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(nextServiceId) => setFormValues((prev) => ({ ...prev, serviceId: nextServiceId }))}
+                      options={[{ value: "", label: "Избери услуга" }, ...serviceSelectOptions]}
+                      disabled={!monthState.isEditable || isSaving}
+                    />
                   </label>
 
                   <label className="flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Задача</span>
-                    <select
+                    <CustomSelect
                       value={formValues.taskId}
-                      onChange={(event) => setFormValues((prev) => ({ ...prev, taskId: event.target.value }))}
-                      className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                      required
-                    >
-                      <option value="">Избери задача</option>
-                      {tasks.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(nextTaskId) => setFormValues((prev) => ({ ...prev, taskId: nextTaskId }))}
+                      options={[{ value: "", label: "Избери задача" }, ...taskSelectOptions]}
+                      disabled={!monthState.isEditable || isSaving}
+                    />
                   </label>
 
                   <label className="flex flex-col gap-1">
@@ -1198,17 +1451,12 @@ export default function WorkReportsPage() {
 
                   <label className="flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Приоритет</span>
-                    <select
+                    <CustomSelect
                       value={formValues.priority}
-                      onChange={(event) => setFormValues((prev) => ({ ...prev, priority: event.target.value }))}
-                      className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                    >
-                      {PRIORITY_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(nextPriority) => setFormValues((prev) => ({ ...prev, priority: nextPriority }))}
+                      options={prioritySelectOptions}
+                      disabled={!monthState.isEditable || isSaving}
+                    />
                   </label>
 
                   <label className="flex flex-col gap-1 md:col-span-2">
@@ -1225,7 +1473,7 @@ export default function WorkReportsPage() {
                   <div className="md:col-span-2">
                     <button
                       type="submit"
-                      disabled={isSaving || monthlyReportStatus === "submitted"}
+                      disabled={isSaving || !monthState.isEditable}
                       className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-200 disabled:opacity-60"
                     >
                       Добави ред
@@ -1247,33 +1495,19 @@ export default function WorkReportsPage() {
                 <div className="mt-3 flex flex-wrap gap-3">
                   <label className="flex flex-col gap-1">
                     <span className="text-xs text-zinc-500">Клиент</span>
-                    <select
+                    <CustomSelect
                       value={draftClientFilter}
-                      onChange={(e) => setDraftClientFilter(e.target.value)}
-                      className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                    >
-                      <option value="">Всички клиенти</option>
-                      {clients.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(nextClientFilter) => setDraftClientFilter(nextClientFilter)}
+                      options={clientFilterOptions}
+                    />
                   </label>
                   <label className="flex flex-col gap-1">
                     <span className="text-xs text-zinc-500">Статус</span>
-                    <select
+                    <CustomSelect
                       value={draftStatusFilter}
-                      onChange={(e) => setDraftStatusFilter(e.target.value)}
-                      className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                    >
-                      <option value="">Всички статуси</option>
-                      {TASK_STATUS_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(nextStatusFilter) => setDraftStatusFilter(nextStatusFilter)}
+                      options={draftStatusFilterOptions}
+                    />
                   </label>
                 </div>
                 <div className="mt-3 space-y-3">
@@ -1301,7 +1535,7 @@ export default function WorkReportsPage() {
               </article>
             </div>
 
-            <aside className="space-y-4">
+            <aside className="space-y-3">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Обобщение</h2>
 
@@ -1378,10 +1612,36 @@ export default function WorkReportsPage() {
                 </div>
               </div>
 
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-500">Статус:</span>
+                    <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${monthStatusBadgeClasses(monthState)}`}>
+                      {monthStatusLabel(monthState)}
+                    </span>
+                  </div>
+                  {currentRole === "admin" && (monthState.isSubmitted || monthState.isLocked) && (
+                    <button
+                      type="button"
+                      onClick={() => void handleAdminUnlockMonth()}
+                      disabled={isSaving}
+                      className="rounded-lg border border-amber-600/70 bg-amber-950/40 px-2.5 py-1.5 text-xs font-medium text-amber-100 transition-colors hover:bg-amber-900/40 disabled:opacity-60"
+                    >
+                      Отключи месеца
+                    </button>
+                  )}
+                </div>
+                {currentRole === "admin" && (
+                  <p className="mt-2 text-[11px] text-zinc-500">
+                    Подаден: {monthState.submittedAt ?? "—"} · Заключен: {monthState.lockedAt ?? "—"}
+                  </p>
+                )}
+              </div>
+
               <button
                 type="button"
                 onClick={handleSubmitWithUnfinishedCheck}
-                disabled={isSaving || draftRows.length === 0 || monthlyReportStatus === "submitted"}
+                disabled={isSaving || draftRows.length === 0 || !monthState.isEditable}
                 className="w-full rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 disabled:opacity-50"
               >
                 Изпрати и заключи месеца
