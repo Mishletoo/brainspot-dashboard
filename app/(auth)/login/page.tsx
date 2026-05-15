@@ -1,16 +1,34 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 const inputClassName =
   "mt-1 w-full rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-600";
+const rememberedEmailKey = "rememberedLoginEmail";
 
 export default function LoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [email, setEmail] = useState("");
+  const [rememberEmail, setRememberEmail] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    try {
+      const rememberedEmail = window.localStorage.getItem(rememberedEmailKey);
+      if (rememberedEmail) {
+        setEmail(rememberedEmail);
+        setRememberEmail(true);
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[Login] Could not read remembered email from localStorage:", error);
+      }
+    }
+  }, []);
 
   const isMissingIsActiveColumnError = (error: { message?: string } | null) => {
     if (!error?.message) return false;
@@ -25,6 +43,7 @@ export default function LoginPage() {
     const formData = new FormData(event.currentTarget);
     const email = (formData.get("email") as string)?.trim() ?? "";
     const password = (formData.get("password") as string) ?? "";
+    const shouldRememberEmail = formData.get("rememberEmail") === "on";
 
     if (!email) {
       setErrorMessage("Please enter your email.");
@@ -33,6 +52,18 @@ export default function LoginPage() {
     if (!password) {
       setErrorMessage("Please enter your password.");
       return;
+    }
+
+    try {
+      if (shouldRememberEmail) {
+        window.localStorage.setItem(rememberedEmailKey, email);
+      } else {
+        window.localStorage.removeItem(rememberedEmailKey);
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[Login] Could not update remembered email in localStorage:", error);
+      }
     }
 
     setIsSubmitting(true);
@@ -173,6 +204,8 @@ export default function LoginPage() {
               autoComplete="email"
               placeholder="you@company.com"
               className={inputClassName}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               disabled={isSubmitting}
             />
           </div>
@@ -181,16 +214,80 @@ export default function LoginPage() {
             <label htmlFor="password" className="text-sm font-medium text-zinc-300">
               Password
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
-              className={inputClassName}
-              disabled={isSubmitting}
-            />
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                className={`${inputClassName} pr-10`}
+                disabled={isSubmitting}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
+                disabled={isSubmitting}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-zinc-400 transition hover:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-600 disabled:opacity-50"
+              >
+                {showPassword ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                    <path d="M3 3l18 18" strokeLinecap="round" />
+                    <path
+                      d="M10.58 10.58a2 2 0 0 0 2.83 2.83"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M9.36 5.2A10.94 10.94 0 0 1 12 5c5 0 9 4.5 10 7-1.04 2.6-3.19 5.66-6.64 6.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M6.23 6.23C3.86 7.8 2.39 10.2 2 12c.64 1.6 1.69 3.22 3.14 4.54"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                    <path
+                      d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
+
+          <label className="mt-1 inline-flex items-center gap-2 text-sm text-zinc-300">
+            <input
+              type="checkbox"
+              name="rememberEmail"
+              checked={rememberEmail}
+              onChange={(event) => {
+                const isChecked = event.target.checked;
+                setRememberEmail(isChecked);
+                if (!isChecked) {
+                  try {
+                    window.localStorage.removeItem(rememberedEmailKey);
+                  } catch (error) {
+                    if (process.env.NODE_ENV === "development") {
+                      console.warn("[Login] Could not clear remembered email from localStorage:", error);
+                    }
+                  }
+                }
+              }}
+              disabled={isSubmitting}
+              className="h-4 w-4 rounded border-zinc-500 bg-zinc-800 text-zinc-200 focus:ring-zinc-600"
+            />
+            <span>Запомни ме</span>
+          </label>
 
           {errorMessage && (
             <p className="text-sm text-red-400" role="alert">
