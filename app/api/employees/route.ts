@@ -26,7 +26,7 @@ async function getAuthedClients() {
 
   const { data: employee, error: employeeError } = await supabase
     .from("employees")
-    .select("id, app_role, is_active")
+    .select("id, app_role")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
@@ -40,7 +40,17 @@ async function getAuthedClients() {
     return { errorResponse: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
 
-  if (employee.is_active === false) {
+  const { data: statusRow, error: statusError } = await supabase
+    .from("employees")
+    .select("is_active")
+    .eq("id", employee.id)
+    .maybeSingle();
+
+  if (statusError && !isMissingIsActiveColumnError(statusError)) {
+    console.warn("[employees] Could not read employees.is_active; proceeding for backward compatibility.");
+  }
+
+  if (statusRow?.is_active === false) {
     return { errorResponse: NextResponse.json({ error: "Account is inactive" }, { status: 403 }) };
   }
 

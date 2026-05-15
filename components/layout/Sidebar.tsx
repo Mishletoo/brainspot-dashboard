@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { canAccessAppPath, resolveAppRole, type AppRole } from "@/lib/roles";
-import { supabase } from "@/lib/supabaseClient";
+import { canAccessAppPath, type AppRole } from "@/lib/roles";
 
 const navLinks = [
   { label: "Dashboard", href: "/" },
@@ -23,62 +22,16 @@ const navLinks = [
   { label: "Profile", href: "/profile" },
 ];
 
-export default function Sidebar() {
+type SidebarProps = {
+  initialRole: AppRole;
+};
+
+export default function Sidebar({ initialRole }: SidebarProps) {
   const pathname = usePathname();
-  const [role, setRole] = useState<AppRole>("employee");
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadRole() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        if (isMounted) setRole("employee");
-        return;
-      }
-
-      const { data: employeeByAuth } = await supabase
-        .from("employees")
-        .select("app_role, is_active")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
-
-      if (employeeByAuth) {
-        if (isMounted) {
-          setRole(resolveAppRole(employeeByAuth.app_role));
-        }
-        return;
-      }
-
-      if (!user.email) {
-        if (isMounted) setRole("employee");
-        return;
-      }
-
-      const { data: employeeByEmail } = await supabase
-        .from("employees")
-        .select("app_role, is_active")
-        .ilike("email", user.email)
-        .maybeSingle();
-
-      if (isMounted) {
-        setRole(resolveAppRole(employeeByEmail?.app_role));
-      }
-    }
-
-    void loadRole();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const visibleLinks = useMemo(
-    () => navLinks.filter((link) => canAccessAppPath(link.href, role)),
-    [role],
+    () => navLinks.filter((link) => canAccessAppPath(link.href, initialRole)),
+    [initialRole],
   );
 
   return (
