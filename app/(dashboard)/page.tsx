@@ -155,6 +155,17 @@ function priorityLabel(priority: string | null) {
   return "—";
 }
 
+function monthlyReportStatusDisplayLabel(status: string) {
+  const normalized = status.toLowerCase().trim();
+  if (normalized === "draft") return "Чернова";
+  if (normalized === "submitted") return "Изпратен";
+  if (normalized === "pending_review") return "Чака преглед";
+  if (normalized === "approved") return "Одобрен";
+  if (normalized === "locked") return "Заключен";
+  if (normalized === "finalized") return "Финализиран";
+  return status;
+}
+
 function monthStatusFromRow(row: Record<string, unknown> | null): "draft" | "submitted" | "locked" {
   if (!row) return "draft";
   const status = String(row.status ?? "").toLowerCase().trim();
@@ -743,7 +754,7 @@ export default function Home() {
                     </p>
                   </article>
                   <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                    <p className="text-xs uppercase tracking-wide text-zinc-500">Чакащи review</p>
+                    <p className="text-xs uppercase tracking-wide text-zinc-500">Чакащи преглед</p>
                     <p className="mt-1 text-lg font-semibold tabular-nums text-zinc-900">{adminData.teamOverview.waitingReview}</p>
                   </article>
                   <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
@@ -798,12 +809,12 @@ export default function Home() {
 
           <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
             <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-              <h2 className="text-sm font-medium text-zinc-700">Upcoming</h2>
+              <h2 className="text-sm font-medium text-zinc-700">Предстоящи</h2>
             </div>
             <div className="grid gap-3 p-4 lg:grid-cols-3">
               <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-zinc-800">Upcoming invoices</h3>
+                  <h3 className="text-sm font-medium text-zinc-800">Предстоящи фактури</h3>
                   <Link href="/invoices" className="text-xs text-zinc-500 hover:text-zinc-700">
                     Виж
                   </Link>
@@ -826,19 +837,21 @@ export default function Home() {
 
               <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-zinc-800">Pending reports</h3>
+                  <h3 className="text-sm font-medium text-zinc-800">Чакащи отчети</h3>
                   <Link href="/work-reports" className="text-xs text-zinc-500 hover:text-zinc-700">
                     Виж
                   </Link>
                 </div>
                 {adminData.pendingReports.length === 0 ? (
-                  <p className="text-sm text-zinc-600">Няма отчети за review.</p>
+                  <p className="text-sm text-zinc-600">Няма отчети в очакване на преглед.</p>
                 ) : (
                   <ul className="space-y-1.5 text-sm text-zinc-700">
                     {adminData.pendingReports.map((report) => (
                       <li key={report.id} className="flex items-center justify-between gap-2">
                         <span className="truncate">{report.employeeName}</span>
-                        <span className="whitespace-nowrap text-xs text-zinc-500">{report.status}</span>
+                        <span className="whitespace-nowrap text-xs text-zinc-500">
+                          {monthlyReportStatusDisplayLabel(report.status)}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -847,7 +860,7 @@ export default function Home() {
 
               <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-zinc-800">Expiring contracts</h3>
+                  <h3 className="text-sm font-medium text-zinc-800">Изтичащи договори</h3>
                   <Link href="/contracts" className="text-xs text-zinc-500 hover:text-zinc-700">
                     Виж
                   </Link>
