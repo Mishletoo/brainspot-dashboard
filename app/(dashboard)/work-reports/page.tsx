@@ -28,6 +28,11 @@ type DraftEditState = {
   priority: string;
 };
 
+type MonthlyAdSpendState = {
+  metaAdsSpend: string;
+  googleAdsSpend: string;
+};
+
 const PRIORITY_OPTIONS: { value: string; label: string }[] = [
   { value: "low", label: "нисък" },
   { value: "normal", label: "нормален" },
@@ -85,6 +90,14 @@ function formatHours(value: number) {
 function parseHours(value: unknown) {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseMoneyInput(value: string) {
+  const normalized = value.trim();
+  if (!normalized) return 0;
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return parsed;
 }
 
 function normalizeStatus(row: Record<string, unknown>): "draft" | "sent" {
@@ -189,6 +202,16 @@ export default function WorkReportsPage() {
   const [savingInlineFields, setSavingInlineFields] = useState<Record<string, boolean>>({});
   const [showUnfinishedConfirm, setShowUnfinishedConfirm] = useState(false);
   const [unfinishedDraftCount, setUnfinishedDraftCount] = useState(0);
+  const [spendClientId, setSpendClientId] = useState("");
+  const [metaAdsServiceId, setMetaAdsServiceId] = useState<string | null>(null);
+  const [googleAdsServiceId, setGoogleAdsServiceId] = useState<string | null>(null);
+  const [monthlyAdSpend, setMonthlyAdSpend] = useState<MonthlyAdSpendState>({
+    metaAdsSpend: "",
+    googleAdsSpend: "",
+  });
+  const [isAdSpendLoading, setIsAdSpendLoading] = useState(false);
+  const [isAdSpendSaving, setIsAdSpendSaving] = useState(false);
+  const [adSpendMessage, setAdSpendMessage] = useState("");
 
   const validTaskStatus = (s: string) =>
     TASK_STATUS_OPTIONS.some((o) => o.value === s) ? s : "waiting";
@@ -214,7 +237,12 @@ export default function WorkReportsPage() {
       const employee = (employeeResult.data ?? [])[0];
       setEmployeeId(employee?.id ? String(employee.id) : null);
       setClients((clientsResult.data ?? []).map((x) => ({ id: String(x.id), name: String(x.name) })));
-      setServices((servicesResult.data ?? []).map((x) => ({ id: String(x.id), name: String(x.name) })));
+      const mappedServices = (servicesResult.data ?? []).map((x) => ({ id: String(x.id), name: String(x.name) }));
+      setServices(mappedServices);
+      const metaAds = mappedServices.find((item) => item.name === "Meta Ads");
+      const googleAds = mappedServices.find((item) => item.name === "Google Ads");
+      setMetaAdsServiceId(metaAds?.id ?? null);
+      setGoogleAdsServiceId(googleAds?.id ?? null);
       setTasks((tasksResult.data ?? []).map((x) => ({ id: String(x.id), name: String(x.name) })));
       setIsLoading(false);
     };
@@ -290,6 +318,51 @@ export default function WorkReportsPage() {
 
     loadMonthData();
   }, [employeeId, monthValue]);
+
+  useEffect(() => {
+    const loadMonthlyAdSpend = async () => {
+      if (!spendClientId || !monthValue || (!metaAdsServiceId && !googleAdsServiceId)) {
+        setMonthlyAdSpend({ metaAdsSpend: "", googleAdsSpend: "" });
+        return;
+      }
+
+      const serviceIds = [metaAdsServiceId, googleAdsServiceId].filter((id): id is string => Boolean(id));
+      if (serviceIds.length === 0) return;
+
+      setIsAdSpendLoading(true);
+      setAdSpendMessage("");
+
+      const result = await supabase
+        .from("client_service_spend")
+        .select("service_id, spend")
+        .eq("client_id", spendClientId)
+        .eq("month", monthValue)
+        .in("service_id", serviceIds);
+
+      if (result.error) {
+        setAdSpendMessage("Не успяхме да заредим рекламния бюджет за този месец.");
+        setMonthlyAdSpend({ metaAdsSpend: "", googleAdsSpend: "" });
+        setIsAdSpendLoading(false);
+        return;
+      }
+
+      let metaValue = "";
+      let googleValue = "";
+      for (const row of (result.data ?? []) as Array<{ service_id: string; spend: number | null }>) {
+        if (metaAdsServiceId && row.service_id === metaAdsServiceId && row.spend != null) {
+          metaValue = String(row.spend);
+        }
+        if (googleAdsServiceId && row.service_id === googleAdsServiceId && row.spend != null) {
+          googleValue = String(row.spend);
+        }
+      }
+
+      setMonthlyAdSpend({ metaAdsSpend: metaValue, googleAdsSpend: googleValue });
+      setIsAdSpendLoading(false);
+    };
+
+    void loadMonthlyAdSpend();
+  }, [googleAdsServiceId, metaAdsServiceId, monthValue, spendClientId]);
 
   const clientById = useMemo(() => new Map(clients.map((item) => [item.id, item.name])), [clients]);
   const serviceById = useMemo(() => new Map(services.map((item) => [item.id, item.name])), [services]);
@@ -567,6 +640,56 @@ export default function WorkReportsPage() {
     setSuccessMessage("Редът е добавен успешно.");
     await reloadItems();
     setIsSaving(false);
+  };
+
+  const handleSaveMonthlyAdSpend = async () => {
+    setAdSpendMessage("");
+    if (!spendClientId) {
+      setAdSpendMessage("Избери клиент за рекламния бюджет.");
+      return;
+    }
+
+    if (!metaAdsServiceId || !googleAdsServiceId) {
+      setAdSpendMessage("Не са намерени услугите Meta Ads и Google Ads в каталога.");
+      return;
+    }
+
+    const metaValue = parseMoneyInput(monthlyAdSpend.metaAdsSpend);
+    const googleValue = parseMoneyInput(monthlyAdSpend.googleAdsSpend);
+
+    if (metaValue == null || googleValue == null) {
+      setAdSpendMessage("Въведи валидни суми (число >= 0).");
+      return;
+    }
+
+    setIsAdSpendSaving(true);
+    const payload = [
+      {
+        client_id: spendClientId,
+        service_id: metaAdsServiceId,
+        month: monthValue,
+        spend: metaValue,
+      },
+      {
+        client_id: spendClientId,
+        service_id: googleAdsServiceId,
+        month: monthValue,
+        spend: googleValue,
+      },
+    ];
+
+    const result = await supabase
+      .from("client_service_spend")
+      .upsert(payload, { onConflict: "client_id,service_id,month" });
+
+    if (result.error) {
+      setAdSpendMessage(`Не успяхме да запазим рекламния бюджет. ${result.error.message}`);
+      setIsAdSpendSaving(false);
+      return;
+    }
+
+    setAdSpendMessage("Рекламният бюджет е запазен.");
+    setIsAdSpendSaving(false);
   };
 
   const handleSendAndLock = async () => {
@@ -912,6 +1035,76 @@ export default function WorkReportsPage() {
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
             <div className="space-y-4 xl:col-span-2">
               <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+                <h2 className="text-base font-semibold text-white">Рекламен бюджет за месеца</h2>
+                <p className="mt-1 text-sm text-zinc-500">{monthLabel(monthValue)}</p>
+
+                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm text-zinc-400">Клиент</span>
+                    <select
+                      value={spendClientId}
+                      onChange={(event) => {
+                        const nextClientId = event.target.value;
+                        setSpendClientId(nextClientId);
+                        setFormValues((prev) => ({ ...prev, clientId: nextClientId }));
+                        setAdSpendMessage("");
+                      }}
+                      className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+                    >
+                      <option value="">Избери клиент</option>
+                      {clients.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm text-zinc-400">Meta Ads разход</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={monthlyAdSpend.metaAdsSpend}
+                      onChange={(event) =>
+                        setMonthlyAdSpend((prev) => ({ ...prev, metaAdsSpend: event.target.value }))
+                      }
+                      disabled={isAdSpendLoading || !spendClientId}
+                      className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500 disabled:opacity-60"
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm text-zinc-400">Google Ads разход</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={monthlyAdSpend.googleAdsSpend}
+                      onChange={(event) =>
+                        setMonthlyAdSpend((prev) => ({ ...prev, googleAdsSpend: event.target.value }))
+                      }
+                      disabled={isAdSpendLoading || !spendClientId}
+                      className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500 disabled:opacity-60"
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveMonthlyAdSpend}
+                    disabled={isAdSpendSaving || isAdSpendLoading || !spendClientId}
+                    className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-200 disabled:opacity-60"
+                  >
+                    {isAdSpendSaving ? "Запазване..." : "Запази бюджет"}
+                  </button>
+                  {adSpendMessage && <p className="text-sm text-zinc-300">{adSpendMessage}</p>}
+                </div>
+              </article>
+
+              <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
                 <h2 className="text-base font-semibold text-white">Добави ред</h2>
                 {monthlyReportStatus === "submitted" && (
                   <p className="mt-2 rounded-lg border border-amber-700/70 bg-amber-950/40 px-3 py-2 text-sm text-amber-100">
@@ -928,7 +1121,12 @@ export default function WorkReportsPage() {
                     <span className="text-sm text-zinc-400">Клиент</span>
                     <select
                       value={formValues.clientId}
-                      onChange={(event) => setFormValues((prev) => ({ ...prev, clientId: event.target.value }))}
+                      onChange={(event) => {
+                        const nextClientId = event.target.value;
+                        setFormValues((prev) => ({ ...prev, clientId: nextClientId }));
+                        setSpendClientId(nextClientId);
+                        setAdSpendMessage("");
+                      }}
                       className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
                       required
                     >
