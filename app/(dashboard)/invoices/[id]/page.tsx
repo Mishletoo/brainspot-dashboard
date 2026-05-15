@@ -38,6 +38,14 @@ function getStatusBadgeClass(status: InvoiceStatus) {
   return "border-zinc-200 bg-zinc-100 text-zinc-700";
 }
 
+function getStatusLabel(status: InvoiceStatus) {
+  if (status === "paid") return "Платена";
+  if (status === "overdue") return "Просрочена";
+  if (status === "sent") return "Изпратена";
+  if (status === "waiting") return "Чакаща";
+  return "Чернова";
+}
+
 export default function InvoiceDetailsPage() {
   const params = useParams();
   const id = params.id as string;
@@ -63,7 +71,7 @@ export default function InvoiceDetailsPage() {
         .single();
 
       if (error || !data) {
-        setErrorMessage("Could not load invoice. It may not exist.");
+        setErrorMessage("Неуспешно зареждане на фактурата. Възможно е да не съществува.");
         setInvoice(null);
         setIsLoading(false);
         return;
@@ -99,7 +107,7 @@ export default function InvoiceDetailsPage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <p className="text-sm text-zinc-600">Loading invoice...</p>
+        <p className="text-sm text-zinc-600">Зареждане на фактура...</p>
       </div>
     );
   }
@@ -108,10 +116,10 @@ export default function InvoiceDetailsPage() {
     return (
       <div className="mx-auto w-full max-w-4xl">
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-          {errorMessage || "Invoice not found."}
+          {errorMessage || "Фактурата не е намерена."}
         </div>
         <Link href="/invoices" className="mt-4 inline-block text-sm text-zinc-600 hover:text-zinc-900">
-          ← Back to invoices
+          ← Назад към фактурите
         </Link>
       </div>
     );
@@ -121,18 +129,18 @@ export default function InvoiceDetailsPage() {
     <div className="mx-auto w-full max-w-4xl">
       <div className="mb-6">
         <Link href="/invoices" className="mb-2 inline-block text-sm text-zinc-500 hover:text-zinc-700">
-          ← Back to invoices
+          ← Назад към фактурите
         </Link>
         <h1 className="text-2xl font-semibold text-zinc-900">{invoice.invoice_number}</h1>
       </div>
 
       <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
         <div className="border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Invoice Details</h2>
+          <h2 className="text-sm font-medium text-zinc-700">Детайли за фактурата</h2>
         </div>
         <dl className="divide-y divide-zinc-100">
           <DetailRow
-            label="Client"
+            label="Клиент"
             value={
               invoice.client ? (
                 <Link href={`/clients/${invoice.client.id}`} className="text-zinc-900 underline-offset-2 hover:underline">
@@ -143,21 +151,21 @@ export default function InvoiceDetailsPage() {
               )
             }
           />
-          <DetailRow label="Invoice number" value={invoice.invoice_number} />
-          <DetailRow label="Amount" value={formatAmount(invoice.amount)} />
-          <DetailRow label="Issue date" value={formatValue(invoice.issue_date)} />
-          <DetailRow label="Due date" value={formatValue(invoice.due_date)} />
+          <DetailRow label="Номер на фактура" value={invoice.invoice_number} />
+          <DetailRow label="Сума" value={formatAmount(invoice.amount)} />
+          <DetailRow label="Дата на издаване" value={formatValue(invoice.issue_date)} />
+          <DetailRow label="Падеж" value={formatValue(invoice.due_date)} />
           <DetailRow
-            label="Status"
+            label="Статус"
             value={
               <span
                 className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusBadgeClass(invoice.status)}`}
               >
-                {invoice.status}
+                {getStatusLabel(invoice.status)}
               </span>
             }
           />
-          <DetailRow label="Notes" value={formatValue(invoice.notes)} />
+          <DetailRow label="Бележки" value={formatValue(invoice.notes)} />
         </dl>
       </div>
     </div>

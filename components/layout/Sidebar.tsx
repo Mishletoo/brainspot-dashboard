@@ -6,20 +6,20 @@ import { usePathname } from "next/navigation";
 import { canAccessAppPath, type AppRole } from "@/lib/roles";
 
 const navLinks = [
-  { label: "Dashboard", href: "/" },
-  { label: "Employees", href: "/employees" },
-  { label: "Clients", href: "/clients" },
-  { label: "Tasks", href: "/tasks" },
-  { label: "Work Reports", href: "/work-reports" },
-  { label: "Contracts", href: "/contracts" },
-  { label: "Invoices", href: "/invoices" },
-  { label: "Services", href: "/services" },
-  { label: "Projects", href: "/projects" },
-  { label: "Finance", href: "/finance" },
-  { label: "Reports", href: "/reports" },
-  { label: "Settings", href: "/settings" },
-  { label: "Manage Users", href: "/settings/users" },
-  { label: "Profile", href: "/profile" },
+  { label: "Табло", href: "/" },
+  { label: "Служители", href: "/employees" },
+  { label: "Клиенти", href: "/clients" },
+  { label: "Задачи", href: "/tasks" },
+  { label: "Отчети за работа", href: "/work-reports" },
+  { label: "Договори", href: "/contracts" },
+  { label: "Фактури", href: "/invoices" },
+  { label: "Услуги", href: "/services" },
+  { label: "Проекти", href: "/projects" },
+  { label: "Финанси", href: "/finance" },
+  { label: "Справки", href: "/reports" },
+  { label: "Настройки", href: "/settings" },
+  { label: "Управление на потребители", href: "/settings/users" },
+  { label: "Профил", href: "/profile" },
 ];
 
 type SidebarProps = {

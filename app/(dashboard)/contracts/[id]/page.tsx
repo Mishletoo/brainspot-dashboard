@@ -56,7 +56,7 @@ export default function ContractDetailsPage() {
         .single();
 
       if (error || !data) {
-        setErrorMessage("Could not load contract. It may not exist.");
+        setErrorMessage("Неуспешно зареждане на договора. Възможно е да не съществува.");
         setContract(null);
         setIsLoading(false);
         return;
@@ -95,7 +95,7 @@ export default function ContractDetailsPage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <p className="text-sm text-zinc-600">Loading contract...</p>
+        <p className="text-sm text-zinc-600">Зареждане на договор...</p>
       </div>
     );
   }
@@ -104,10 +104,10 @@ export default function ContractDetailsPage() {
     return (
       <div className="mx-auto w-full max-w-4xl">
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-          {errorMessage || "Contract not found."}
+          {errorMessage || "Договорът не е намерен."}
         </div>
         <Link href="/contracts" className="mt-4 inline-block text-sm text-zinc-600 hover:text-zinc-900">
-          ← Back to contracts
+          ← Назад към договорите
         </Link>
       </div>
     );
@@ -117,18 +117,18 @@ export default function ContractDetailsPage() {
     <div className="mx-auto w-full max-w-4xl">
       <div className="mb-6">
         <Link href="/contracts" className="mb-2 inline-block text-sm text-zinc-500 hover:text-zinc-700">
-          ← Back to contracts
+          ← Назад към договорите
         </Link>
         <h1 className="text-2xl font-semibold text-zinc-900">{contract.contract_name}</h1>
       </div>
 
       <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
         <div className="border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Contract Details</h2>
+          <h2 className="text-sm font-medium text-zinc-700">Детайли за договора</h2>
         </div>
         <dl className="divide-y divide-zinc-100">
           <DetailRow
-            label="Client"
+            label="Клиент"
             value={contract.client ? (
               <Link href={`/clients/${contract.client.id}`} className="text-zinc-900 underline-offset-2 hover:underline">
                 {contract.client.name}
@@ -137,9 +137,9 @@ export default function ContractDetailsPage() {
               "-"
             )}
           />
-          <DetailRow label="Contract name" value={contract.contract_name} />
+          <DetailRow label="Име на договор" value={contract.contract_name} />
           <DetailRow
-            label="Contract file"
+            label="Договор"
             value={
               contract.contract_file ? (
                 isUrl(contract.contract_file) ? (
@@ -149,7 +149,7 @@ export default function ContractDetailsPage() {
                     rel="noreferrer"
                     className="text-zinc-900 underline-offset-2 hover:underline"
                   >
-                    Open file
+                    Отвори файла
                   </a>
                 ) : (
                   contract.contract_file
@@ -159,12 +159,12 @@ export default function ContractDetailsPage() {
               )
             }
           />
-          <DetailRow label="Signed date" value={formatValue(contract.signed_date)} />
-          <DetailRow label="Start date" value={formatValue(contract.start_date)} />
-          <DetailRow label="End date" value={formatValue(contract.end_date)} />
-          <DetailRow label="Notice period days" value={formatValue(contract.notice_period_days)} />
-          <DetailRow label="Reminder days" value={formatValue(contract.reminder_days)} />
-          <DetailRow label="Notes" value={formatValue(contract.notes)} />
+          <DetailRow label="Дата на подписване" value={formatValue(contract.signed_date)} />
+          <DetailRow label="Начална дата" value={formatValue(contract.start_date)} />
+          <DetailRow label="Крайна дата" value={formatValue(contract.end_date)} />
+          <DetailRow label="Срок на предизвестие (дни)" value={formatValue(contract.notice_period_days)} />
+          <DetailRow label="Дни за напомняне" value={formatValue(contract.reminder_days)} />
+          <DetailRow label="Бележки" value={formatValue(contract.notes)} />
         </dl>
       </div>
     </div>

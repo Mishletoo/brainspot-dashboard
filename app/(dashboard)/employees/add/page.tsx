@@ -53,7 +53,7 @@ export default function AddEmployeePage() {
     const { error } = await supabase.from("employees").insert(employeeData);
 
     if (error) {
-      setErrorMessage("Could not save employee. Please try again.");
+      setErrorMessage("Неуспешно запазване на служителя. Моля, опитайте отново.");
       setIsSaving(false);
       return;
     }
@@ -68,71 +68,71 @@ export default function AddEmployeePage() {
   return (
     <div className="mx-auto w-full max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-zinc-900">Add Employee</h1>
-        <p className="mt-1 text-sm text-zinc-500">Fill in the employee details below.</p>
+        <h1 className="text-2xl font-semibold text-zinc-900">Добавяне на служител</h1>
+        <p className="mt-1 text-sm text-zinc-500">Попълнете данните за служителя.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label htmlFor="first_name" className="text-sm font-medium text-zinc-700">
-              First name
+              Име
             </label>
             <input id="first_name" name="first_name" type="text" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="last_name" className="text-sm font-medium text-zinc-700">
-              Last name
+              Фамилия
             </label>
             <input id="last_name" name="last_name" type="text" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="position" className="text-sm font-medium text-zinc-700">
-              Position
+              Позиция
             </label>
             <input id="position" name="position" type="text" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="department" className="text-sm font-medium text-zinc-700">
-              Department
+              Отдел
             </label>
             <input id="department" name="department" type="text" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="email" className="text-sm font-medium text-zinc-700">
-              Email
+              Имейл
             </label>
             <input id="email" name="email" type="email" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="phone" className="text-sm font-medium text-zinc-700">
-              Phone
+              Телефон
             </label>
             <input id="phone" name="phone" type="tel" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="birth_date" className="text-sm font-medium text-zinc-700">
-              Birth date
+              Дата на раждане
             </label>
             <input id="birth_date" name="birth_date" type="date" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="photo_url" className="text-sm font-medium text-zinc-700">
-              Photo URL
+              Снимка (URL)
             </label>
             <input id="photo_url" name="photo_url" type="url" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="hours_per_day" className="text-sm font-medium text-zinc-700">
-              Hours per day
+              Часове на ден
             </label>
             <input
               id="hours_per_day"
@@ -146,7 +146,7 @@ export default function AddEmployeePage() {
 
           <div>
             <label htmlFor="gross_salary" className="text-sm font-medium text-zinc-700">
-              Gross salary
+              Брутна заплата
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
@@ -165,7 +165,7 @@ export default function AddEmployeePage() {
 
           <div>
             <label htmlFor="net_salary" className="text-sm font-medium text-zinc-700">
-              Net salary
+              Нетна заплата
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
@@ -184,7 +184,7 @@ export default function AddEmployeePage() {
 
           <div>
             <label htmlFor="bonus" className="text-sm font-medium text-zinc-700">
-              Bonus
+              Бонус
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
@@ -203,7 +203,7 @@ export default function AddEmployeePage() {
 
           <div>
             <label htmlFor="vouchers" className="text-sm font-medium text-zinc-700">
-              Vouchers
+              Ваучери
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
@@ -222,7 +222,7 @@ export default function AddEmployeePage() {
 
           <div>
             <label htmlFor="employer_contributions" className="text-sm font-medium text-zinc-700">
-              Employer contributions
+              Осигуровки от работодател
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
@@ -241,7 +241,7 @@ export default function AddEmployeePage() {
 
           <div>
             <label htmlFor="monthly_hours" className="text-sm font-medium text-zinc-700">
-              Monthly hours
+              Месечни часове
             </label>
             <input
               id="monthly_hours"
@@ -263,14 +263,14 @@ export default function AddEmployeePage() {
             disabled={isSaving}
             className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Cancel
+            Отказ
           </button>
           <button
             type="submit"
             disabled={isSaving}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
           >
-            {isSaving ? "Saving..." : "Save employee"}
+            {isSaving ? "Запазване..." : "Запази служителя"}
           </button>
         </div>
       </form>

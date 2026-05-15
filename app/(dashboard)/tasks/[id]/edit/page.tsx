@@ -41,7 +41,7 @@ export default function EditTaskPage() {
       const { data, error } = await supabase.from("tasks").select("name, description").eq("id", id).single();
 
       if (error || !data) {
-        setErrorMessage("Could not load task data.");
+        setErrorMessage("Неуспешно зареждане на данните за задачата.");
         setIsLoading(false);
         return;
       }
@@ -62,7 +62,7 @@ export default function EditTaskPage() {
 
     const cleanName = formValues.name.trim();
     if (!cleanName) {
-      setErrorMessage("Task name is required.");
+      setErrorMessage("Името на задачата е задължително.");
       return;
     }
 
@@ -78,7 +78,7 @@ export default function EditTaskPage() {
       .eq("id", id);
 
     if (error) {
-      setErrorMessage("Could not update task. Please try again.");
+      setErrorMessage("Неуспешно обновяване на задачата. Моля, опитайте отново.");
       setIsSaving(false);
       return;
     }
@@ -89,7 +89,7 @@ export default function EditTaskPage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-2xl">
-        <p className="text-sm text-zinc-600">Loading task data...</p>
+        <p className="text-sm text-zinc-600">Зареждане на данните за задачата...</p>
       </div>
     );
   }
@@ -99,7 +99,7 @@ export default function EditTaskPage() {
       <div className="mx-auto w-full max-w-2xl">
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">{errorMessage}</div>
         <Link href={`/tasks/${id}`} className="mt-4 inline-block text-sm text-zinc-600 hover:text-zinc-900">
-          ← Back to task details
+          ← Назад към детайлите за задачата
         </Link>
       </div>
     );
@@ -109,17 +109,17 @@ export default function EditTaskPage() {
     <div className="mx-auto w-full max-w-2xl">
       <div className="mb-6">
         <Link href={`/tasks/${id}`} className="mb-2 inline-block text-sm text-zinc-500 hover:text-zinc-700">
-          ← Back to task details
+          ← Назад към детайлите за задачата
         </Link>
-        <h1 className="text-2xl font-semibold text-zinc-900">Edit Task</h1>
-        <p className="mt-1 text-sm text-zinc-500">Update task name and description.</p>
+        <h1 className="text-2xl font-semibold text-zinc-900">Редакция на задача</h1>
+        <p className="mt-1 text-sm text-zinc-500">Обновете името и описанието на задачата.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="space-y-4">
           <div>
             <label htmlFor="name" className="text-sm font-medium text-zinc-700">
-              Task name
+              Име на задача
             </label>
             <input
               id="name"
@@ -133,7 +133,7 @@ export default function EditTaskPage() {
 
           <div>
             <label htmlFor="description" className="text-sm font-medium text-zinc-700">
-              Description
+              Описание
             </label>
             <textarea
               id="description"
@@ -152,14 +152,14 @@ export default function EditTaskPage() {
             href={`/tasks/${id}`}
             className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Cancel
+            Отказ
           </Link>
           <button
             type="submit"
             disabled={isSaving}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
           >
-            {isSaving ? "Saving..." : "Save changes"}
+            {isSaving ? "Запазване..." : "Запази промените"}
           </button>
         </div>
       </form>

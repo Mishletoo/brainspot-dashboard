@@ -178,7 +178,7 @@ export default function ManageUsersPage() {
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Управление на потребители</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Създавайте login потребители и управлявайте роли и достъп до системата.
+          Създавайте потребители за вход и управлявайте роли и достъп до системата.
         </p>
       </div>
 
@@ -187,7 +187,7 @@ export default function ManageUsersPage() {
         <form onSubmit={handleCreateUser} className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="md:col-span-2">
             <label htmlFor="user_email" className="text-sm font-medium text-zinc-700">
-              Email
+              Имейл
             </label>
             <input
               id="user_email"
@@ -202,7 +202,7 @@ export default function ManageUsersPage() {
 
           <div>
             <label htmlFor="user_role" className="text-sm font-medium text-zinc-700">
-              Role
+              Роля
             </label>
             <select
               id="user_role"
@@ -226,7 +226,7 @@ export default function ManageUsersPage() {
 
           <div>
             <label htmlFor="temporary_password" className="text-sm font-medium text-zinc-700">
-              Temporary password
+              Временна парола
             </label>
             <input
               id="temporary_password"
@@ -267,12 +267,12 @@ export default function ManageUsersPage() {
         <table className="min-w-full text-left text-sm">
           <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
             <tr>
-              <th className="px-4 py-3 font-medium">Email</th>
-              <th className="px-4 py-3 font-medium">Role</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Linked employee</th>
-              <th className="px-4 py-3 font-medium">Created</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
+              <th className="px-4 py-3 font-medium">Имейл</th>
+              <th className="px-4 py-3 font-medium">Роля</th>
+              <th className="px-4 py-3 font-medium">Статус</th>
+              <th className="px-4 py-3 font-medium">Свързан служител</th>
+              <th className="px-4 py-3 font-medium">Създадено</th>
+              <th className="px-4 py-3 font-medium">Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -313,10 +313,10 @@ export default function ManageUsersPage() {
                         className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${statusBadgeClass(user.status)}`}
                       >
                         {user.status === "active"
-                          ? "active"
+                          ? "активен"
                           : user.status === "inactive"
-                            ? "inactive"
-                            : "pending link"}
+                            ? "неактивен"
+                            : "чака свързване"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-zinc-700">
@@ -331,7 +331,7 @@ export default function ManageUsersPage() {
                           disabled={isRowBusy}
                           className="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
                         >
-                          {user.isActive ? "Deactivate" : "Activate"}
+                          {user.isActive ? "Деактивирай" : "Активирай"}
                         </button>
                       </div>
                     </td>

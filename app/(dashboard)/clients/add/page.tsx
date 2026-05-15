@@ -30,7 +30,7 @@ export default function AddClientPage() {
     const notes = toNullableText(formData.get("notes"));
 
     if (!name) {
-      setErrorMessage("Name is required.");
+      setErrorMessage("Името е задължително.");
       setIsSaving(false);
       return;
     }
@@ -44,7 +44,7 @@ export default function AddClientPage() {
     });
 
     if (error) {
-      setErrorMessage("Could not save client. Please try again.");
+      setErrorMessage("Неуспешно запазване на клиента. Моля, опитайте отново.");
       setIsSaving(false);
       return;
     }
@@ -59,50 +59,50 @@ export default function AddClientPage() {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-zinc-900">Add Client</h1>
-        <p className="mt-1 text-sm text-zinc-500">Create a new client by filling in the form below.</p>
+        <h1 className="text-2xl font-semibold text-zinc-900">Добавяне на клиент</h1>
+        <p className="mt-1 text-sm text-zinc-500">Създайте нов клиент, като попълните формата.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="space-y-4">
           <div>
             <label htmlFor="name" className="text-sm font-medium text-zinc-700">
-              Name
+              Име
             </label>
             <input id="name" name="name" type="text" required className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="contact_person" className="text-sm font-medium text-zinc-700">
-              Contact person
+              Контактно лице
             </label>
             <input id="contact_person" name="contact_person" type="text" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="email" className="text-sm font-medium text-zinc-700">
-              Email
+              Имейл
             </label>
             <input id="email" name="email" type="email" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="phone" className="text-sm font-medium text-zinc-700">
-              Phone
+              Телефон
             </label>
             <input id="phone" name="phone" type="text" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="notes" className="text-sm font-medium text-zinc-700">
-              Notes
+              Бележки
             </label>
             <textarea
               id="notes"
               name="notes"
               rows={4}
               className={`${inputClassName} resize-y`}
-              placeholder="Optional internal notes"
+              placeholder="Незадължителни вътрешни бележки"
             />
           </div>
         </div>
@@ -116,14 +116,14 @@ export default function AddClientPage() {
             disabled={isSaving}
             className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Cancel
+            Отказ
           </button>
           <button
             type="submit"
             disabled={isSaving}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
           >
-            {isSaving ? "Saving..." : "Save client"}
+            {isSaving ? "Запазване..." : "Запази клиента"}
           </button>
         </div>
       </form>

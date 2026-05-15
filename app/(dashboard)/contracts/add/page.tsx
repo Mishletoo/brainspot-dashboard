@@ -26,7 +26,7 @@ export default function AddContractPage() {
       const { data, error } = await supabase.from("clients").select("id, name").order("name", { ascending: true });
 
       if (error) {
-        setErrorMessage("Could not load clients. Please refresh and try again.");
+        setErrorMessage("Неуспешно зареждане на клиентите. Моля, опитайте отново.");
         setClients([]);
         setIsLoadingClients(false);
         return;
@@ -80,13 +80,13 @@ export default function AddContractPage() {
     const notes = toNullableText(formData.get("notes"));
 
     if (!clientId) {
-      setErrorMessage("Client is required.");
+      setErrorMessage("Клиентът е задължителен.");
       setIsSaving(false);
       return;
     }
 
     if (!contractName) {
-      setErrorMessage("Contract name is required.");
+      setErrorMessage("Името на договора е задължително.");
       setIsSaving(false);
       return;
     }
@@ -104,7 +104,7 @@ export default function AddContractPage() {
     });
 
     if (error) {
-      setErrorMessage("Could not save contract. Please try again.");
+      setErrorMessage("Неуспешно запазване на договора. Моля, опитайте отново.");
       setIsSaving(false);
       return;
     }
@@ -119,18 +119,18 @@ export default function AddContractPage() {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-zinc-900">Add Contract</h1>
-        <p className="mt-1 text-sm text-zinc-500">Create a new contract by filling in the form below.</p>
+        <h1 className="text-2xl font-semibold text-zinc-900">Добавяне на договор</h1>
+        <p className="mt-1 text-sm text-zinc-500">Създайте нов договор, като попълните формата.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="space-y-4">
           <div>
             <label htmlFor="client_id" className="text-sm font-medium text-zinc-700">
-              Client
+              Клиент
             </label>
             <select id="client_id" name="client_id" required disabled={isLoadingClients} className={inputClassName}>
-              <option value="">{isLoadingClients ? "Loading clients..." : "Select a client"}</option>
+              <option value="">{isLoadingClients ? "Зареждане на клиенти..." : "Изберете клиент"}</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.name}
@@ -141,21 +141,21 @@ export default function AddContractPage() {
 
           <div>
             <label htmlFor="contract_name" className="text-sm font-medium text-zinc-700">
-              Contract name
+              Име на договор
             </label>
             <input id="contract_name" name="contract_name" type="text" required className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="contract_file_url" className="text-sm font-medium text-zinc-700">
-              Contract file URL
+              Договор (URL)
             </label>
             <input id="contract_file_url" name="contract_file_url" type="url" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="contract_file_upload" className="text-sm font-medium text-zinc-700">
-              Contract file upload
+              Качване на договор
             </label>
             <input
               id="contract_file_upload"
@@ -163,47 +163,47 @@ export default function AddContractPage() {
               type="file"
               className={`${inputClassName} file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:font-medium file:text-zinc-700`}
             />
-            <p className="mt-1 text-xs text-zinc-500">Upload is optional. If selected, the file name is saved.</p>
+            <p className="mt-1 text-xs text-zinc-500">Качването е незадължително. Ако изберете файл, ще се запази името му.</p>
           </div>
 
           <div>
             <label htmlFor="signed_date" className="text-sm font-medium text-zinc-700">
-              Signed date
+              Дата на подписване
             </label>
             <input id="signed_date" name="signed_date" type="date" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="start_date" className="text-sm font-medium text-zinc-700">
-              Start date
+              Начална дата
             </label>
             <input id="start_date" name="start_date" type="date" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="end_date" className="text-sm font-medium text-zinc-700">
-              End date
+              Крайна дата
             </label>
             <input id="end_date" name="end_date" type="date" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="notice_period_days" className="text-sm font-medium text-zinc-700">
-              Notice period days
+              Срок на предизвестие (дни)
             </label>
             <input id="notice_period_days" name="notice_period_days" type="number" min={0} className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="reminder_days" className="text-sm font-medium text-zinc-700">
-              Reminder days
+              Дни за напомняне
             </label>
             <input id="reminder_days" name="reminder_days" type="number" min={0} className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="notes" className="text-sm font-medium text-zinc-700">
-              Notes
+              Бележки
             </label>
             <textarea id="notes" name="notes" rows={4} className={`${inputClassName} resize-y`} />
           </div>
@@ -218,14 +218,14 @@ export default function AddContractPage() {
             disabled={isSaving}
             className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Cancel
+            Отказ
           </button>
           <button
             type="submit"
             disabled={isSaving || isLoadingClients}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSaving ? "Saving..." : "Save contract"}
+            {isSaving ? "Запазване..." : "Запази договора"}
           </button>
         </div>
       </form>

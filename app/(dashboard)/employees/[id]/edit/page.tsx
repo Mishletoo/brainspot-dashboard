@@ -92,7 +92,7 @@ export default function EditEmployeePage() {
       const employee = payload?.employee;
 
       if (!response.ok || !employee) {
-        setErrorMessage(payload?.error ?? "Could not load employee data.");
+        setErrorMessage(payload?.error ?? "Неуспешно зареждане на данните за служителя.");
         setIsLoading(false);
         return;
       }
@@ -144,7 +144,7 @@ export default function EditEmployeePage() {
     setIsSaving(true);
 
     if (!id) {
-      setErrorMessage("Missing employee id.");
+      setErrorMessage("Липсва идентификатор на служител.");
       setIsSaving(false);
       return;
     }
@@ -180,7 +180,7 @@ export default function EditEmployeePage() {
       | null;
 
     if (!response.ok || payload?.success !== true) {
-      setErrorMessage(payload?.error ?? "Could not update employee. Please try again.");
+      setErrorMessage(payload?.error ?? "Неуспешно обновяване на служителя. Моля, опитайте отново.");
       setIsSaving(false);
       return;
     }
@@ -191,7 +191,7 @@ export default function EditEmployeePage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <p className="text-sm text-zinc-600">Loading employee data...</p>
+        <p className="text-sm text-zinc-600">Зареждане на данните за служителя...</p>
       </div>
     );
   }
@@ -201,7 +201,7 @@ export default function EditEmployeePage() {
       <div className="mx-auto w-full max-w-4xl">
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{errorMessage}</div>
         <Link href={`/employees/${id}`} className="mt-4 inline-block text-sm text-zinc-600 hover:text-zinc-900">
-          ← Back to employee details
+          ← Назад към детайлите за служителя
         </Link>
       </div>
     );
@@ -211,17 +211,17 @@ export default function EditEmployeePage() {
     <div className="mx-auto w-full max-w-4xl">
       <div className="mb-6">
         <Link href={`/employees/${id}`} className="mb-2 inline-block text-sm text-zinc-500 hover:text-zinc-700">
-          ← Back to employee details
+          ← Назад към детайлите за служителя
         </Link>
-        <h1 className="text-2xl font-semibold text-zinc-900">Edit Employee</h1>
-        <p className="mt-1 text-sm text-zinc-500">Update employee information below.</p>
+        <h1 className="text-2xl font-semibold text-zinc-900">Редакция на служител</h1>
+        <p className="mt-1 text-sm text-zinc-500">Обновете информацията за служителя.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label htmlFor="first_name" className="text-sm font-medium text-zinc-700">
-              First name
+              Име
             </label>
             <input
               id="first_name"
@@ -234,7 +234,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="last_name" className="text-sm font-medium text-zinc-700">
-              Last name
+              Фамилия
             </label>
             <input
               id="last_name"
@@ -247,7 +247,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="position" className="text-sm font-medium text-zinc-700">
-              Position
+              Позиция
             </label>
             <input
               id="position"
@@ -260,7 +260,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="department" className="text-sm font-medium text-zinc-700">
-              Department
+              Отдел
             </label>
             <input
               id="department"
@@ -273,7 +273,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="email" className="text-sm font-medium text-zinc-700">
-              Email
+              Имейл
             </label>
             <input
               id="email"
@@ -286,7 +286,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="phone" className="text-sm font-medium text-zinc-700">
-              Phone
+              Телефон
             </label>
             <input
               id="phone"
@@ -299,7 +299,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="birth_date" className="text-sm font-medium text-zinc-700">
-              Birth date
+              Дата на раждане
             </label>
             <input
               id="birth_date"
@@ -312,7 +312,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="photo_url" className="text-sm font-medium text-zinc-700">
-              Photo URL
+              Снимка (URL)
             </label>
             <input
               id="photo_url"
@@ -325,7 +325,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="hours_per_day" className="text-sm font-medium text-zinc-700">
-              Hours per day
+              Часове на ден
             </label>
             <input
               id="hours_per_day"
@@ -340,7 +340,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="gross_salary" className="text-sm font-medium text-zinc-700">
-              Gross salary
+              Брутна заплата
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
@@ -360,7 +360,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="net_salary" className="text-sm font-medium text-zinc-700">
-              Net salary
+              Нетна заплата
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
@@ -380,7 +380,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="bonus" className="text-sm font-medium text-zinc-700">
-              Bonus
+              Бонус
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
@@ -400,7 +400,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="vouchers" className="text-sm font-medium text-zinc-700">
-              Vouchers
+              Ваучери
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
@@ -420,7 +420,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="employer_contributions" className="text-sm font-medium text-zinc-700">
-              Employer contributions
+              Осигуровки от работодател
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
@@ -440,7 +440,7 @@ export default function EditEmployeePage() {
 
           <div>
             <label htmlFor="monthly_hours" className="text-sm font-medium text-zinc-700">
-              Monthly hours
+              Месечни часове
             </label>
             <input
               id="monthly_hours"
@@ -461,14 +461,14 @@ export default function EditEmployeePage() {
             href={`/employees/${id}`}
             className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Cancel
+            Отказ
           </Link>
           <button
             type="submit"
             disabled={isSaving}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
           >
-            {isSaving ? "Saving..." : "Save changes"}
+            {isSaving ? "Запазване..." : "Запази промените"}
           </button>
         </div>
       </form>

@@ -28,20 +28,20 @@ function formatCurrency(value: number | null) {
 function getLinkedAccountStatus(employee: Employee) {
   if (!employee.auth_user_id) {
     return {
-      label: "Not linked",
+      label: "Несвързан",
       className: "border-zinc-200 bg-zinc-50 text-zinc-700",
     };
   }
 
   if (employee.is_active === false) {
     return {
-      label: "Linked (inactive)",
+      label: "Свързан (неактивен)",
       className: "border-red-200 bg-red-50 text-red-700",
     };
   }
 
   return {
-    label: "Linked (active)",
+    label: "Свързан (активен)",
     className: "border-emerald-200 bg-emerald-50 text-emerald-700",
   };
 }
@@ -63,7 +63,7 @@ export default function EmployeesPage() {
         | null;
 
       if (!response.ok) {
-        setErrorMessage(payload?.error ?? "Could not load employees. Please refresh and try again.");
+        setErrorMessage(payload?.error ?? "Неуспешно зареждане на служителите. Моля, опитайте отново.");
         setEmployees([]);
         setIsLoading(false);
         return;
@@ -80,19 +80,19 @@ export default function EmployeesPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Employees</h1>
-          <p className="text-sm text-zinc-500">Manage employees in one place.</p>
+          <h1 className="text-2xl font-semibold text-zinc-900">Служители</h1>
+          <p className="text-sm text-zinc-500">Управлявайте служителите на едно място.</p>
         </div>
         <Link
           href="/employees/add"
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
         >
-          Add employee
+          Добави служител
         </Link>
       </div>
 
       {isLoading && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Loading employees...</div>
+        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Зареждане на служители...</div>
       )}
 
       {!isLoading && errorMessage && (
@@ -101,10 +101,10 @@ export default function EmployeesPage() {
 
       {!isLoading && !errorMessage && employees.length === 0 && (
         <EmptyState
-          title="No employees yet"
-          description="Add your team to manage contacts and assignments. Add your first employee to get started."
+          title="Все още няма служители"
+          description="Добавете екипа си, за да управлявате контакти и ангажименти."
           actionHref="/employees/add"
-          actionLabel="Add employee"
+          actionLabel="Добави служител"
         />
       )}
 
@@ -113,15 +113,15 @@ export default function EmployeesPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
               <tr>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Position</th>
-                <th className="px-4 py-3 font-medium">Department</th>
-                <th className="px-4 py-3 font-medium">Net salary</th>
-                <th className="px-4 py-3 font-medium">Bonus</th>
-                <th className="px-4 py-3 font-medium">Monthly cost</th>
-                <th className="px-4 py-3 font-medium">Linked account</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Phone</th>
+                <th className="px-4 py-3 font-medium">Име</th>
+                <th className="px-4 py-3 font-medium">Позиция</th>
+                <th className="px-4 py-3 font-medium">Отдел</th>
+                <th className="px-4 py-3 font-medium">Нетна заплата</th>
+                <th className="px-4 py-3 font-medium">Бонус</th>
+                <th className="px-4 py-3 font-medium">Месечен разход</th>
+                <th className="px-4 py-3 font-medium">Свързан акаунт</th>
+                <th className="px-4 py-3 font-medium">Имейл</th>
+                <th className="px-4 py-3 font-medium">Телефон</th>
               </tr>
             </thead>
             <tbody>

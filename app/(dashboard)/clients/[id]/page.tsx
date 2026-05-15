@@ -53,12 +53,26 @@ function formatPercentage(value: number | string | null) {
   return `${parseFloat(String(value))}%`;
 }
 
+function getPricingTypeLabel(value: "one_time" | "monthly" | "percentage") {
+  if (value === "one_time") return "Еднократно";
+  if (value === "monthly") return "Месечно";
+  return "Процент";
+}
+
 function getInvoiceStatusBadgeClass(status: ClientInvoice["status"]) {
   if (status === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700";
   if (status === "overdue") return "border-red-200 bg-red-50 text-red-700";
   if (status === "sent") return "border-blue-200 bg-blue-50 text-blue-700";
   if (status === "waiting") return "border-amber-200 bg-amber-50 text-amber-700";
   return "border-zinc-200 bg-zinc-100 text-zinc-700";
+}
+
+function getInvoiceStatusLabel(status: ClientInvoice["status"]) {
+  if (status === "paid") return "Платена";
+  if (status === "overdue") return "Просрочена";
+  if (status === "sent") return "Изпратена";
+  if (status === "waiting") return "Чакаща";
+  return "Чернова";
 }
 
 export default function ClientDetailsPage() {
@@ -91,7 +105,7 @@ export default function ClientDetailsPage() {
         .single();
 
       if (clientError || !clientData) {
-        setErrorMessage("Could not load client. It may not exist.");
+        setErrorMessage("Неуспешно зареждане на клиента. Възможно е да не съществува.");
         setClient(null);
         setClientServices([]);
         setClientContracts([]);
@@ -107,7 +121,7 @@ export default function ClientDetailsPage() {
         .order("created_at", { ascending: false });
 
       if (serviceError) {
-        setErrorMessage("Could not load client services. Please refresh and try again.");
+        setErrorMessage("Неуспешно зареждане на услугите на клиента. Моля, опитайте отново.");
         setClient(clientData);
         setClientServices([]);
         setClientContracts([]);
@@ -132,7 +146,7 @@ export default function ClientDetailsPage() {
         .order("created_at", { ascending: false });
 
       if (contractError) {
-        setErrorMessage("Could not load client contracts. Please refresh and try again.");
+        setErrorMessage("Неуспешно зареждане на договорите на клиента. Моля, опитайте отново.");
         setClient(clientData);
         setClientServices(mappedClientServices);
         setClientContracts([]);
@@ -156,7 +170,7 @@ export default function ClientDetailsPage() {
         .order("created_at", { ascending: false });
 
       if (invoiceError) {
-        setErrorMessage("Could not load client invoices. Please refresh and try again.");
+        setErrorMessage("Неуспешно зареждане на фактурите на клиента. Моля, опитайте отново.");
         setClient(clientData);
         setClientServices(mappedClientServices);
         setClientContracts(mappedClientContracts);
@@ -185,7 +199,7 @@ export default function ClientDetailsPage() {
   }, [id]);
 
   const handleDetachService = async (clientServiceId: string) => {
-    const confirmed = window.confirm("Remove this attached service from the client?");
+    const confirmed = window.confirm("Премахване на тази свързана услуга от клиента?");
     if (!confirmed) return;
 
     setDetachErrorMessage("");
@@ -194,7 +208,7 @@ export default function ClientDetailsPage() {
     const { error } = await supabase.from("client_services").delete().eq("id", clientServiceId);
 
     if (error) {
-      setDetachErrorMessage("Could not remove service from this client. Please try again.");
+      setDetachErrorMessage("Неуспешно премахване на услугата от клиента. Моля, опитайте отново.");
       setRemovingClientServiceId(null);
       return;
     }
@@ -206,7 +220,7 @@ export default function ClientDetailsPage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <p className="text-sm text-zinc-600">Loading client...</p>
+        <p className="text-sm text-zinc-600">Зареждане на клиент...</p>
       </div>
     );
   }
@@ -214,9 +228,9 @@ export default function ClientDetailsPage() {
   if (errorMessage || !client) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{errorMessage || "Client not found."}</div>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{errorMessage || "Клиентът не е намерен."}</div>
         <Link href="/clients" className="mt-4 inline-block text-sm text-zinc-600 hover:text-zinc-900">
-          ← Back to clients
+          ← Назад към клиентите
         </Link>
       </div>
     );
@@ -227,7 +241,7 @@ export default function ClientDetailsPage() {
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <Link href="/clients" className="mb-2 inline-block text-sm text-zinc-500 hover:text-zinc-700">
-            ← Back to clients
+            ← Назад към клиентите
           </Link>
           <h1 className="text-2xl font-semibold text-zinc-900">{client.name}</h1>
         </div>
@@ -235,25 +249,25 @@ export default function ClientDetailsPage() {
 
       <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
         <div className="border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Client Details</h2>
+          <h2 className="text-sm font-medium text-zinc-700">Детайли за клиента</h2>
         </div>
         <dl className="divide-y divide-zinc-100">
-          <DetailRow label="Name" value={client.name} />
-          <DetailRow label="Contact person" value={client.contact_person} />
-          <DetailRow label="Email" value={client.email} />
-          <DetailRow label="Phone" value={client.phone} />
-          <DetailRow label="Notes" value={client.notes} />
+          <DetailRow label="Име" value={client.name} />
+          <DetailRow label="Контактно лице" value={client.contact_person} />
+          <DetailRow label="Имейл" value={client.email} />
+          <DetailRow label="Телефон" value={client.phone} />
+          <DetailRow label="Бележки" value={client.notes} />
         </dl>
       </div>
 
       <div className="mt-6 rounded-xl border border-zinc-200 bg-white shadow-sm">
         <div className="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Client Services</h2>
+          <h2 className="text-sm font-medium text-zinc-700">Услуги на клиента</h2>
           <Link
             href={`/clients/${id}/add-service`}
             className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800"
           >
-            Attach Service
+            Свържи услуга
           </Link>
         </div>
         {detachErrorMessage && (
@@ -262,10 +276,10 @@ export default function ClientDetailsPage() {
 
         {clientServices.length === 0 ? (
           <EmptyState
-            title="No services attached"
-            description="Attach services from your catalog with custom pricing for this client."
+            title="Няма свързани услуги"
+            description="Свържете услуги от каталога с индивидуални цени за този клиент."
             actionHref={`/clients/${id}/add-service`}
-            actionLabel="Attach service"
+            actionLabel="Свържи услуга"
             variant="compact"
           />
         ) : (
@@ -273,19 +287,19 @@ export default function ClientDetailsPage() {
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Service name</th>
-                  <th className="px-4 py-3 font-medium">Pricing type</th>
-                  <th className="px-4 py-3 font-medium">Fixed price</th>
-                  <th className="px-4 py-3 font-medium">Monthly price</th>
-                  <th className="px-4 py-3 font-medium">Percentage rate</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
+                  <th className="px-4 py-3 font-medium">Услуга</th>
+                  <th className="px-4 py-3 font-medium">Тип ценообразуване</th>
+                  <th className="px-4 py-3 font-medium">Фиксирана цена</th>
+                  <th className="px-4 py-3 font-medium">Месечна цена</th>
+                  <th className="px-4 py-3 font-medium">Процент</th>
+                  <th className="px-4 py-3 font-medium">Действия</th>
                 </tr>
               </thead>
               <tbody>
                 {clientServices.map((service) => (
                   <tr key={service.id} className="border-b border-zinc-100 last:border-b-0">
                     <td className="px-4 py-3 text-zinc-900">{service.service?.name || "-"}</td>
-                    <td className="px-4 py-3 text-zinc-700">{service.pricing_type}</td>
+                    <td className="px-4 py-3 text-zinc-700">{getPricingTypeLabel(service.pricing_type)}</td>
                     <td className="px-4 py-3 text-zinc-700">{formatMoney(service.fixed_price)}</td>
                     <td className="px-4 py-3 text-zinc-700">{formatMoney(service.monthly_price)}</td>
                     <td className="px-4 py-3 text-zinc-700">{formatPercentage(service.percentage_rate)}</td>
@@ -296,7 +310,7 @@ export default function ClientDetailsPage() {
                         disabled={removingClientServiceId === service.id}
                         className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {removingClientServiceId === service.id ? "Removing..." : "Remove"}
+                        {removingClientServiceId === service.id ? "Премахване..." : "Премахни"}
                       </button>
                     </td>
                   </tr>
@@ -309,21 +323,21 @@ export default function ClientDetailsPage() {
 
       <div className="mt-6 rounded-xl border border-zinc-200 bg-white shadow-sm">
         <div className="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Contracts</h2>
+          <h2 className="text-sm font-medium text-zinc-700">Договори</h2>
           <Link
             href="/contracts/add"
             className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800"
           >
-            Add Contract
+            Добави договор
           </Link>
         </div>
 
         {clientContracts.length === 0 ? (
           <EmptyState
-            title="No contracts yet"
-            description="Add contracts for this client to track dates and renewal reminders."
+            title="Все още няма договори"
+            description="Добавете договори за този клиент, за да следите срокове и напомняния."
             actionHref="/contracts/add"
-            actionLabel="Add contract"
+            actionLabel="Добави договор"
             variant="compact"
           />
         ) : (
@@ -331,10 +345,10 @@ export default function ClientDetailsPage() {
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Contract name</th>
-                  <th className="px-4 py-3 font-medium">Start date</th>
-                  <th className="px-4 py-3 font-medium">End date</th>
-                  <th className="px-4 py-3 font-medium">Reminder days</th>
+                  <th className="px-4 py-3 font-medium">Договор</th>
+                  <th className="px-4 py-3 font-medium">Начална дата</th>
+                  <th className="px-4 py-3 font-medium">Крайна дата</th>
+                  <th className="px-4 py-3 font-medium">Дни за напомняне</th>
                 </tr>
               </thead>
               <tbody>
@@ -358,21 +372,21 @@ export default function ClientDetailsPage() {
 
       <div className="mt-6 rounded-xl border border-zinc-200 bg-white shadow-sm">
         <div className="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Invoices</h2>
+          <h2 className="text-sm font-medium text-zinc-700">Фактури</h2>
           <Link
             href="/invoices/add"
             className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800"
           >
-            Add Invoice
+            Добави фактура
           </Link>
         </div>
 
         {clientInvoices.length === 0 ? (
           <EmptyState
-            title="No invoices yet"
-            description="Create invoices for this client to track amounts and payment status."
+            title="Все още няма фактури"
+            description="Създайте фактури за този клиент, за да следите суми и плащания."
             actionHref="/invoices/add"
-            actionLabel="Add invoice"
+            actionLabel="Добави фактура"
             variant="compact"
           />
         ) : (
@@ -380,11 +394,11 @@ export default function ClientDetailsPage() {
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Invoice number</th>
-                  <th className="px-4 py-3 font-medium">Amount</th>
-                  <th className="px-4 py-3 font-medium">Issue date</th>
-                  <th className="px-4 py-3 font-medium">Due date</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Номер на фактура</th>
+                  <th className="px-4 py-3 font-medium">Сума</th>
+                  <th className="px-4 py-3 font-medium">Дата на издаване</th>
+                  <th className="px-4 py-3 font-medium">Падеж</th>
+                  <th className="px-4 py-3 font-medium">Статус</th>
                 </tr>
               </thead>
               <tbody>
@@ -402,7 +416,7 @@ export default function ClientDetailsPage() {
                       <span
                         className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getInvoiceStatusBadgeClass(invoice.status)}`}
                       >
-                        {invoice.status}
+                        {getInvoiceStatusLabel(invoice.status)}
                       </span>
                     </td>
                   </tr>

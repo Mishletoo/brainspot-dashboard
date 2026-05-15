@@ -31,7 +31,7 @@ export default function ClientsPage() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        setErrorMessage("Could not load clients. Please refresh and try again.");
+        setErrorMessage("Неуспешно зареждане на клиентите. Моля, опитайте отново.");
         setClients([]);
         setIsLoading(false);
         return;
@@ -48,19 +48,19 @@ export default function ClientsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Clients</h1>
-          <p className="text-sm text-zinc-500">Manage client contacts in one place.</p>
+          <h1 className="text-2xl font-semibold text-zinc-900">Клиенти</h1>
+          <p className="text-sm text-zinc-500">Управлявайте клиентите на едно място.</p>
         </div>
         <Link
           href="/clients/add"
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
         >
-          Add client
+          Добави клиент
         </Link>
       </div>
 
       {isLoading && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Loading clients...</div>
+        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Зареждане на клиенти...</div>
       )}
 
       {!isLoading && errorMessage && (
@@ -69,10 +69,10 @@ export default function ClientsPage() {
 
       {!isLoading && !errorMessage && clients.length === 0 && (
         <EmptyState
-          title="No clients yet"
-          description="Start by adding your first client. You can attach services, contracts, and invoices later."
+          title="Все още няма клиенти"
+          description="Започнете, като добавите първия си клиент."
           actionHref="/clients/add"
-          actionLabel="Add client"
+          actionLabel="Добави клиент"
         />
       )}
 
@@ -81,10 +81,10 @@ export default function ClientsPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
               <tr>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Contact person</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Phone</th>
+                <th className="px-4 py-3 font-medium">Име</th>
+                <th className="px-4 py-3 font-medium">Контактно лице</th>
+                <th className="px-4 py-3 font-medium">Имейл</th>
+                <th className="px-4 py-3 font-medium">Телефон</th>
               </tr>
             </thead>
             <tbody>

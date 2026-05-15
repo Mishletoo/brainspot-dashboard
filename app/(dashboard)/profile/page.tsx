@@ -41,7 +41,7 @@ export default function ProfilePage() {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        setErrorMessage("Could not load profile. Please sign in again.");
+        setErrorMessage("Неуспешно зареждане на профила. Моля, влезте отново.");
         setIsLoading(false);
         return;
       }
@@ -53,7 +53,7 @@ export default function ProfilePage() {
         .maybeSingle();
 
       if (error || !data) {
-        setErrorMessage("Could not load your employee profile. Please contact your administrator.");
+        setErrorMessage("Неуспешно зареждане на профила на служителя. Свържете се с администратор.");
         setIsLoading(false);
         return;
       }
@@ -83,12 +83,12 @@ export default function ProfilePage() {
     });
 
     if (error) {
-      setErrorMessage("Could not update your profile. Please try again.");
+      setErrorMessage("Неуспешно обновяване на профила. Моля, опитайте отново.");
       setIsSaving(false);
       return;
     }
 
-    setSuccessMessage("Profile updated successfully.");
+    setSuccessMessage("Профилът е обновен успешно.");
     setIsSaving(false);
   };
 
@@ -98,12 +98,12 @@ export default function ProfilePage() {
     setSuccessMessage("");
 
     if (newPassword.trim().length < 8) {
-      setErrorMessage("Password must be at least 8 characters.");
+      setErrorMessage("Паролата трябва да е поне 8 символа.");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrorMessage("Passwords do not match.");
+      setErrorMessage("Паролите не съвпадат.");
       return;
     }
 
@@ -111,33 +111,33 @@ export default function ProfilePage() {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
 
     if (error) {
-      setErrorMessage("Could not change password. Please try again.");
+      setErrorMessage("Неуспешна смяна на паролата. Моля, опитайте отново.");
       setIsChangingPassword(false);
       return;
     }
 
     setNewPassword("");
     setConfirmPassword("");
-    setSuccessMessage("Password updated successfully.");
+    setSuccessMessage("Паролата е обновена успешно.");
     setIsChangingPassword(false);
   };
 
   const displayName =
     [profile?.first_name, profile?.last_name].filter((part) => part && part.trim().length > 0).join(" ") ||
-    "Your profile";
+    "Вашият профил";
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col justify-center py-8">
       <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-6 shadow-lg">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-zinc-100">Profile</h1>
+          <h1 className="text-2xl font-semibold text-zinc-100">Профил</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            View and update your personal details. Salary and other sensitive fields can only be managed by admins.
+            Преглед и редакция на личните данни. Заплатата и чувствителните полета се управляват само от администратори.
           </p>
         </div>
 
         {isLoading ? (
-          <p className="text-sm text-zinc-400">Loading your profile...</p>
+          <p className="text-sm text-zinc-400">Зареждане на профила...</p>
         ) : errorMessage ? (
           <p className="text-sm text-red-400" role="alert">
             {errorMessage}
@@ -151,11 +151,11 @@ export default function ProfilePage() {
 
             <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/40 p-4">
-                <p className="text-xs uppercase tracking-wide text-zinc-500">Name</p>
+                <p className="text-xs uppercase tracking-wide text-zinc-500">Име</p>
                 <p className="mt-1 text-sm text-zinc-100">{displayName}</p>
               </div>
               <div className="rounded-lg border border-zinc-700 bg-zinc-950/40 p-4">
-                <p className="text-xs uppercase tracking-wide text-zinc-500">Email</p>
+                <p className="text-xs uppercase tracking-wide text-zinc-500">Имейл</p>
                 <p className="mt-1 text-sm text-zinc-100">{profile?.email ?? "-"}</p>
               </div>
             </div>
@@ -163,7 +163,7 @@ export default function ProfilePage() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
                 <label htmlFor="phone" className="text-sm font-medium text-zinc-300">
-                  Phone
+                  Телефон
                 </label>
                 <input
                   id="phone"
@@ -178,7 +178,7 @@ export default function ProfilePage() {
 
               <div>
                 <label htmlFor="birth_date" className="text-sm font-medium text-zinc-300">
-                  Birth date
+                  Дата на раждане
                 </label>
                 <input
                   id="birth_date"
@@ -193,7 +193,7 @@ export default function ProfilePage() {
 
               <div>
                 <label htmlFor="photo_url" className="text-sm font-medium text-zinc-300">
-                  Photo URL
+                  Снимка (URL)
                 </label>
                 <input
                   id="photo_url"
@@ -224,19 +224,19 @@ export default function ProfilePage() {
                   disabled={isSaving}
                   className="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50"
                 >
-                  {isSaving ? "Saving…" : "Save changes"}
+                  {isSaving ? "Запазване..." : "Запази промените"}
                 </button>
               </div>
             </form>
 
             <form onSubmit={handlePasswordSubmit} className="mt-8 flex flex-col gap-4 border-t border-zinc-700 pt-6">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-100">Change password</h2>
-                <p className="mt-1 text-xs text-zinc-400">Use at least 8 characters for better security.</p>
+                <h2 className="text-sm font-semibold text-zinc-100">Смяна на парола</h2>
+                <p className="mt-1 text-xs text-zinc-400">Използвайте поне 8 символа за по-добра сигурност.</p>
               </div>
               <div>
                 <label htmlFor="new_password" className="text-sm font-medium text-zinc-300">
-                  New password
+                  Нова парола
                 </label>
                 <input
                   id="new_password"
@@ -251,7 +251,7 @@ export default function ProfilePage() {
 
               <div>
                 <label htmlFor="confirm_password" className="text-sm font-medium text-zinc-300">
-                  Confirm password
+                  Потвърди парола
                 </label>
                 <input
                   id="confirm_password"
@@ -270,7 +270,7 @@ export default function ProfilePage() {
                   disabled={isChangingPassword}
                   className="rounded-lg border border-zinc-600 px-4 py-2.5 text-sm font-medium text-zinc-100 hover:bg-zinc-800 disabled:opacity-50"
                 >
-                  {isChangingPassword ? "Updating..." : "Update password"}
+                  {isChangingPassword ? "Обновяване..." : "Обнови паролата"}
                 </button>
               </div>
             </form>

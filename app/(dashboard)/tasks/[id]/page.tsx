@@ -90,7 +90,7 @@ export default function TaskDetailsPage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-2xl">
-        <p className="text-sm text-zinc-600">Loading task...</p>
+        <p className="text-sm text-zinc-600">Зареждане на задача...</p>
       </div>
     );
   }
@@ -99,10 +99,10 @@ export default function TaskDetailsPage() {
     return (
       <div className="mx-auto w-full max-w-2xl">
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-          {errorMessage || "Task not found."}
+          {errorMessage || "Задачата не е намерена."}
         </div>
         <Link href="/tasks" className="mt-4 inline-block text-sm text-zinc-600 hover:text-zinc-900">
-          ← Back to tasks
+          ← Назад към задачите
         </Link>
       </div>
     );
@@ -113,7 +113,7 @@ export default function TaskDetailsPage() {
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <Link href="/tasks" className="mb-2 inline-block text-sm text-zinc-500 hover:text-zinc-700">
-            ← Back to tasks
+            ← Назад към задачите
           </Link>
           <h1 className="text-2xl font-semibold text-zinc-900">{task.name}</h1>
           <p className="mt-1 text-sm text-zinc-500">Детайли за избраната задача.</p>
@@ -123,7 +123,7 @@ export default function TaskDetailsPage() {
             href={`/tasks/${task.id}/edit`}
             className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Edit
+            Редактирай
           </Link>
           <button
             type="button"
@@ -131,7 +131,7 @@ export default function TaskDetailsPage() {
             disabled={isDeleting}
             className="rounded-lg border border-rose-300 bg-white px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
           >
-            {isDeleting ? "Deleting..." : "Delete"}
+            {isDeleting ? "Изтриване..." : "Изтрий"}
           </button>
         </div>
       </div>
@@ -140,12 +140,12 @@ export default function TaskDetailsPage() {
 
       <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
         <div className="border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Task details</h2>
+          <h2 className="text-sm font-medium text-zinc-700">Детайли за задачата</h2>
         </div>
         <dl className="divide-y divide-zinc-100">
-          <DetailRow label="Task name" value={task.name} />
-          <DetailRow label="Description" value={task.description} />
-          <DetailRow label="Created at" value={formatDate(task.created_at)} />
+          <DetailRow label="Задача" value={task.name} />
+          <DetailRow label="Описание" value={task.description} />
+          <DetailRow label="Създадена на" value={formatDate(task.created_at)} />
         </dl>
       </div>
     </div>

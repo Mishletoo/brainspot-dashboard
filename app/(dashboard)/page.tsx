@@ -103,7 +103,7 @@ export default function Home() {
         overdueInvoicesResult.error ||
         expiringContractsResult.error
       ) {
-        setErrorMessage("Could not load dashboard data. Please refresh and try again.");
+        setErrorMessage("Неуспешно зареждане на данните за таблото. Моля, опитайте отново.");
         setMetrics({
           activeClients: 0,
           activeContracts: 0,
@@ -148,8 +148,8 @@ export default function Home() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold text-zinc-900">Dashboard</h1>
-        <p className="text-sm text-zinc-500">Welcome to Brainspot Dashboard.</p>
+        <h1 className="text-2xl font-semibold text-zinc-900">Табло</h1>
+        <p className="text-sm text-zinc-500">Добре дошли в Brainspot.</p>
       </div>
 
       <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
@@ -159,7 +159,7 @@ export default function Home() {
             className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 text-center transition-colors hover:bg-zinc-50 sm:py-4"
           >
             <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">
-              Active clients
+              Активни клиенти
             </p>
             <p className="text-lg font-semibold tabular-nums text-zinc-900">
               {isLoading ? "—" : metrics.activeClients}
@@ -170,7 +170,7 @@ export default function Home() {
             className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 text-center transition-colors hover:bg-zinc-50 sm:py-4"
           >
             <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">
-              Active contracts
+              Активни договори
             </p>
             <p className="text-lg font-semibold tabular-nums text-zinc-900">
               {isLoading ? "—" : metrics.activeContracts}
@@ -181,7 +181,7 @@ export default function Home() {
             className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 text-center transition-colors hover:bg-zinc-50 sm:py-4"
           >
             <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">
-              Unpaid invoices
+              Неплатени фактури
             </p>
             <p className="text-lg font-semibold tabular-nums text-zinc-900">
               {isLoading ? "—" : metrics.unpaidInvoices}
@@ -192,7 +192,7 @@ export default function Home() {
             className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 text-center transition-colors hover:bg-zinc-50 sm:py-4"
           >
             <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">
-              Overdue invoices
+              Просрочени фактури
             </p>
             <p className="text-lg font-semibold tabular-nums text-zinc-900">
               {isLoading ? "—" : metrics.overdueInvoices}
@@ -203,25 +203,25 @@ export default function Home() {
 
       <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Contracts expiring soon</h2>
+          <h2 className="text-sm font-medium text-zinc-700">Договори с наближаващ край</h2>
           <Link
             href="/contracts"
             className="text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-700"
           >
-            View all
+            Виж всички
           </Link>
         </div>
 
-        {isLoading && <div className="p-4 text-sm text-zinc-600">Loading contracts...</div>}
+        {isLoading && <div className="p-4 text-sm text-zinc-600">Зареждане на договори...</div>}
 
         {!isLoading && errorMessage && <div className="p-4 text-sm text-red-700">{errorMessage}</div>}
 
         {!isLoading && !errorMessage && contracts.length === 0 && (
           <EmptyState
-            title="No contracts expiring soon"
-            description="Contracts ending in the next 60 days will appear here. Add a contract to get started."
+            title="Няма договори с наближаващ край"
+            description="Тук ще се показват договорите, които изтичат в следващите 60 дни."
             actionHref="/contracts/add"
-            actionLabel="Add contract"
+            actionLabel="Добави договор"
             variant="compact"
           />
         )}
@@ -231,10 +231,10 @@ export default function Home() {
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Client name</th>
-                  <th className="px-4 py-3 font-medium">Contract name</th>
-                  <th className="px-4 py-3 font-medium">End date</th>
-                  <th className="px-4 py-3 font-medium">Days left</th>
+                  <th className="px-4 py-3 font-medium">Клиент</th>
+                  <th className="px-4 py-3 font-medium">Договор</th>
+                  <th className="px-4 py-3 font-medium">Крайна дата</th>
+                  <th className="px-4 py-3 font-medium">Оставащи дни</th>
                 </tr>
               </thead>
               <tbody>
@@ -247,7 +247,7 @@ export default function Home() {
                       <span
                         className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusClasses(contract.days_left)}`}
                       >
-                        {contract.days_left} days
+                        {contract.days_left} дни
                       </span>
                     </td>
                   </tr>

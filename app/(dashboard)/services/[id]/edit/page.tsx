@@ -1,14 +1,28 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 const inputClassName =
   "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200";
 
-export default function AddServicePage() {
+type PricingType = "one_time" | "monthly" | "percentage";
+
+type Service = {
+  name: string;
+  description: string | null;
+  pricing_type: PricingType;
+  percentage_value: number | null;
+};
+
+export default function EditServicePage() {
+  const params = useParams();
   const router = useRouter();
+  const serviceId = params.id as string;
+
+  const [service, setService] = useState<Service | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -16,6 +30,38 @@ export default function AddServicePage() {
     const trimmed = typeof value === "string" ? value.trim() : "";
     return trimmed === "" ? null : trimmed;
   };
+
+  useEffect(() => {
+    const fetchService = async () => {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      const { data, error } = await supabase
+        .from("services")
+        .select("name, description, pricing_type, percentage_value")
+        .eq("id", serviceId)
+        .single();
+
+      if (error || !data) {
+        setErrorMessage("Неуспешно зареждане на услугата. Моля, опитайте отново.");
+        setService(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setService({
+        name: data.name ?? "",
+        description: data.description ?? null,
+        pricing_type: (data.pricing_type as PricingType) ?? "one_time",
+        percentage_value: data.percentage_value != null ? Number(data.percentage_value) : null,
+      });
+      setIsLoading(false);
+    };
+
+    if (serviceId) {
+      void fetchService();
+    }
+  }, [serviceId]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,7 +72,7 @@ export default function AddServicePage() {
     const name = typeof formData.get("name") === "string" ? formData.get("name")?.toString().trim() : "";
     const description = toNullableText(formData.get("description"));
     const pricingType =
-      typeof formData.get("pricing_type") === "string" ? formData.get("pricing_type")?.toString() : "";
+      typeof formData.get("pricing_type") === "string" ? (formData.get("pricing_type")?.toString() as PricingType) : "";
     const percentageText =
       typeof formData.get("percentage_value") === "string" ? formData.get("percentage_value")?.toString().trim() : "";
 
@@ -60,18 +106,21 @@ export default function AddServicePage() {
       percentageValue = parsedPercentage;
     }
 
-    const { error } = await supabase.from("services").insert({
-      name,
-      description,
-      pricing_type: pricingType,
-      percentage_value: percentageValue,
-    });
+    const { error } = await supabase
+      .from("services")
+      .update({
+        name,
+        description,
+        pricing_type: pricingType,
+        percentage_value: percentageValue,
+      })
+      .eq("id", serviceId);
 
     if (error) {
       if (error.code === "23505") {
         setErrorMessage("Вече съществува услуга с това име.");
       } else {
-        setErrorMessage("Неуспешно запазване на услугата. Моля, опитайте отново.");
+        setErrorMessage("Неуспешно обновяване на услугата. Моля, опитайте отново.");
       }
       setIsSaving(false);
       return;
@@ -84,11 +133,29 @@ export default function AddServicePage() {
     router.push("/services");
   };
 
+  if (isLoading) {
+    return (
+      <div className="mx-auto w-full max-w-2xl">
+        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Зареждане на услуга...</div>
+      </div>
+    );
+  }
+
+  if (!service) {
+    return (
+      <div className="mx-auto w-full max-w-2xl">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+          {errorMessage || "Услугата не е намерена."}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto w-full max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-zinc-900">Добавяне на услуга</h1>
-        <p className="mt-1 text-sm text-zinc-500">Създайте нова услуга, като попълните формата.</p>
+        <h1 className="text-2xl font-semibold text-zinc-900">Редакция на услуга</h1>
+        <p className="mt-1 text-sm text-zinc-500">Обновете детайлите и настройките за ценообразуване.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
@@ -97,7 +164,7 @@ export default function AddServicePage() {
             <label htmlFor="name" className="text-sm font-medium text-zinc-700">
               Име
             </label>
-            <input id="name" name="name" type="text" required className={inputClassName} />
+            <input id="name" name="name" type="text" required className={inputClassName} defaultValue={service.name} />
           </div>
 
           <div>
@@ -110,6 +177,7 @@ export default function AddServicePage() {
               rows={4}
               className={`${inputClassName} resize-y`}
               placeholder="Незадължително кратко описание"
+              defaultValue={service.description ?? ""}
             />
           </div>
 
@@ -117,7 +185,13 @@ export default function AddServicePage() {
             <label htmlFor="pricing_type" className="text-sm font-medium text-zinc-700">
               Тип ценообразуване
             </label>
-            <select id="pricing_type" name="pricing_type" required className={inputClassName} defaultValue="one_time">
+            <select
+              id="pricing_type"
+              name="pricing_type"
+              required
+              className={inputClassName}
+              defaultValue={service.pricing_type}
+            >
               <option value="one_time">Еднократно</option>
               <option value="monthly">Месечно</option>
               <option value="percentage">Процент</option>
@@ -137,6 +211,7 @@ export default function AddServicePage() {
               max="100"
               className={inputClassName}
               placeholder="Само при тип „Процент“"
+              defaultValue={service.percentage_value ?? ""}
             />
           </div>
         </div>
@@ -157,7 +232,7 @@ export default function AddServicePage() {
             disabled={isSaving}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
           >
-            {isSaving ? "Запазване..." : "Запази услугата"}
+            {isSaving ? "Запазване..." : "Запази промените"}
           </button>
         </div>
       </form>

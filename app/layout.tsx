@@ -8,8 +8,8 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Brainspot Dashboard",
-  description: "Manage employees, clients, projects and finance",
+  title: "Brainspot Табло",
+  description: "Управление на служители, клиенти, проекти и финанси",
 };
 
 export default function RootLayout({
@@ -18,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="bg">
       <body className={`${geistSans.variable} antialiased bg-zinc-50`}>{children}</body>
     </html>
   );

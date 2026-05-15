@@ -38,7 +38,7 @@ export default function ContractsPage() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        setErrorMessage("Could not load contracts. Please refresh and try again.");
+        setErrorMessage("Неуспешно зареждане на договорите. Моля, опитайте отново.");
         setContracts([]);
         setIsLoading(false);
         return;
@@ -64,19 +64,19 @@ export default function ContractsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Contracts</h1>
-          <p className="text-sm text-zinc-500">Track contract dates and reminders in one place.</p>
+          <h1 className="text-2xl font-semibold text-zinc-900">Договори</h1>
+          <p className="text-sm text-zinc-500">Следете срокове и напомняния по договорите.</p>
         </div>
         <Link
           href="/contracts/add"
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
         >
-          Add contract
+          Добави договор
         </Link>
       </div>
 
       {isLoading && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Loading contracts...</div>
+        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Зареждане на договори...</div>
       )}
 
       {!isLoading && errorMessage && (
@@ -85,10 +85,10 @@ export default function ContractsPage() {
 
       {!isLoading && !errorMessage && contracts.length === 0 && (
         <EmptyState
-          title="No contracts yet"
-          description="Track contract dates and renewal reminders in one place. Add your first contract to get started."
+          title="Все още няма договори"
+          description="Добавете първия договор, за да следите срокове и подновявания."
           actionHref="/contracts/add"
-          actionLabel="Add contract"
+          actionLabel="Добави договор"
         />
       )}
 
@@ -97,11 +97,11 @@ export default function ContractsPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
               <tr>
-                <th className="px-4 py-3 font-medium">Client name</th>
-                <th className="px-4 py-3 font-medium">Contract name</th>
-                <th className="px-4 py-3 font-medium">Start date</th>
-                <th className="px-4 py-3 font-medium">End date</th>
-                <th className="px-4 py-3 font-medium">Reminder days</th>
+                <th className="px-4 py-3 font-medium">Клиент</th>
+                <th className="px-4 py-3 font-medium">Договор</th>
+                <th className="px-4 py-3 font-medium">Начална дата</th>
+                <th className="px-4 py-3 font-medium">Крайна дата</th>
+                <th className="px-4 py-3 font-medium">Дни за напомняне</th>
               </tr>
             </thead>
             <tbody>

@@ -42,7 +42,7 @@ export default function AddClientServicePage() {
       const { data, error } = await supabase.from("services").select("id, name").order("name", { ascending: true });
 
       if (error) {
-        setErrorMessage("Could not load services. Please refresh and try again.");
+        setErrorMessage("Неуспешно зареждане на услугите. Моля, опитайте отново.");
         setServices([]);
         setIsLoadingServices(false);
         return;
@@ -67,13 +67,13 @@ export default function AddClientServicePage() {
       typeof formData.get("pricing_type") === "string" ? formData.get("pricing_type")?.toString() : "";
 
     if (!serviceId) {
-      setErrorMessage("Service is required.");
+      setErrorMessage("Услугата е задължителна.");
       setIsSaving(false);
       return;
     }
 
     if (!pricingType || !["one_time", "monthly", "percentage"].includes(pricingType)) {
-      setErrorMessage("Pricing type is required.");
+      setErrorMessage("Типът ценообразуване е задължителен.");
       setIsSaving(false);
       return;
     }
@@ -94,7 +94,7 @@ export default function AddClientServicePage() {
     });
 
     if (error) {
-      setErrorMessage("Could not attach service. Please try again.");
+      setErrorMessage("Неуспешно свързване на услугата. Моля, опитайте отново.");
       setIsSaving(false);
       return;
     }
@@ -109,18 +109,18 @@ export default function AddClientServicePage() {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-zinc-900">Attach Service</h1>
-        <p className="mt-1 text-sm text-zinc-500">Choose a service and pricing details for this client.</p>
+        <h1 className="text-2xl font-semibold text-zinc-900">Свързване на услуга</h1>
+        <p className="mt-1 text-sm text-zinc-500">Изберете услуга и ценообразуване за този клиент.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="space-y-4">
           <div>
             <label htmlFor="service_id" className="text-sm font-medium text-zinc-700">
-              Service
+              Услуга
             </label>
             <select id="service_id" name="service_id" required className={inputClassName} disabled={isLoadingServices}>
-              <option value="">{isLoadingServices ? "Loading services..." : "Select a service"}</option>
+              <option value="">{isLoadingServices ? "Зареждане на услуги..." : "Изберете услуга"}</option>
               {services.map((service) => (
                 <option key={service.id} value={service.id}>
                   {service.name}
@@ -131,32 +131,32 @@ export default function AddClientServicePage() {
 
           <div>
             <label htmlFor="pricing_type" className="text-sm font-medium text-zinc-700">
-              Pricing type
+              Тип ценообразуване
             </label>
             <select id="pricing_type" name="pricing_type" required className={inputClassName}>
-              <option value="one_time">one_time</option>
-              <option value="monthly">monthly</option>
-              <option value="percentage">percentage</option>
+              <option value="one_time">Еднократно</option>
+              <option value="monthly">Месечно</option>
+              <option value="percentage">Процент</option>
             </select>
           </div>
 
           <div>
             <label htmlFor="fixed_price" className="text-sm font-medium text-zinc-700">
-              Fixed price
+              Фиксирана цена
             </label>
             <input id="fixed_price" name="fixed_price" type="number" step="0.01" min="0" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="monthly_price" className="text-sm font-medium text-zinc-700">
-              Monthly price
+              Месечна цена
             </label>
             <input id="monthly_price" name="monthly_price" type="number" step="0.01" min="0" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="percentage_rate" className="text-sm font-medium text-zinc-700">
-              Percentage rate
+              Процент
             </label>
             <input
               id="percentage_rate"
@@ -170,14 +170,14 @@ export default function AddClientServicePage() {
 
           <div>
             <label htmlFor="notes" className="text-sm font-medium text-zinc-700">
-              Notes
+              Бележки
             </label>
             <textarea
               id="notes"
               name="notes"
               rows={4}
               className={`${inputClassName} resize-y`}
-              placeholder="Optional notes"
+              placeholder="Незадължителни бележки"
             />
           </div>
         </div>
@@ -191,14 +191,14 @@ export default function AddClientServicePage() {
             disabled={isSaving}
             className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Cancel
+            Отказ
           </button>
           <button
             type="submit"
             disabled={isSaving || isLoadingServices}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
           >
-            {isSaving ? "Saving..." : "Save"}
+            {isSaving ? "Запазване..." : "Запази"}
           </button>
         </div>
       </form>

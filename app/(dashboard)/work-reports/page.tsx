@@ -992,7 +992,7 @@ export default function WorkReportsPage() {
           )}
           {readOnly && (
             <span className="rounded-full border border-emerald-700/60 bg-emerald-900/30 px-2.5 py-1 text-xs text-emerald-300">
-              read-only
+              само за преглед
             </span>
           )}
         </div>
@@ -1024,7 +1024,7 @@ export default function WorkReportsPage() {
         </div>
 
         {isLoading && (
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-sm text-zinc-400">Loading report...</div>
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-sm text-zinc-400">Зареждане на отчета...</div>
         )}
 
         {!isLoading && errorMessage && (
@@ -1289,7 +1289,7 @@ export default function WorkReportsPage() {
               </article>
 
               <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-                <h3 className="text-base font-semibold text-white">Изпратено (read-only)</h3>
+                <h3 className="text-base font-semibold text-white">Изпратено (само за преглед)</h3>
                 <div className="mt-3 space-y-3">
                   {sentRows.length === 0 && (
                     <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-500">

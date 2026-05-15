@@ -46,11 +46,11 @@ export default function LoginPage() {
     const shouldRememberEmail = formData.get("rememberEmail") === "on";
 
     if (!email) {
-      setErrorMessage("Please enter your email.");
+      setErrorMessage("Моля, въведете имейл.");
       return;
     }
     if (!password) {
-      setErrorMessage("Please enter your password.");
+      setErrorMessage("Моля, въведете парола.");
       return;
     }
 
@@ -74,13 +74,13 @@ export default function LoginPage() {
       });
 
       if (signInError) {
-        setErrorMessage(signInError.message || "Login failed. Please try again.");
+        setErrorMessage(signInError.message || "Неуспешен вход. Моля, опитайте отново.");
         return;
       }
 
       const userId = authData.user?.id;
       if (!userId) {
-        setErrorMessage("Login failed. No user returned.");
+        setErrorMessage("Неуспешен вход. Липсва потребител.");
         return;
       }
 
@@ -101,8 +101,8 @@ export default function LoginPage() {
         }
         setErrorMessage(
           fetchError.message
-            ? `Could not verify employee record: ${fetchError.message}`
-            : "Could not verify employee record. Please try again."
+            ? `Неуспешна проверка на профила на служителя: ${fetchError.message}`
+            : "Неуспешна проверка на профила на служителя. Моля, опитайте отново."
         );
         return;
       }
@@ -140,7 +140,7 @@ export default function LoginPage() {
           if (process.env.NODE_ENV === "development") console.error("[Login] signOut after no employee:", e);
         }
         setErrorMessage(
-          "No employee account linked to this user. Please register first or contact your administrator."
+          "Няма свързан профил на служител към този потребител. Свържете се с администратор."
         );
         return;
       }
@@ -172,7 +172,7 @@ export default function LoginPage() {
       router.push("/");
       router.refresh();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      const message = err instanceof Error ? err.message : "Възникна неочаквана грешка.";
       setErrorMessage(message);
       if (process.env.NODE_ENV === "development") {
         console.error("[Login] Unexpected error:", err);
@@ -186,16 +186,16 @@ export default function LoginPage() {
     <div className="mx-auto flex max-w-md flex-col justify-center py-12">
       <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-6 shadow-lg">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-zinc-100">Login</h1>
+          <h1 className="text-2xl font-semibold text-zinc-100">Вход</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Sign in with your work email and password.
+            Влез с работния си имейл и парола.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label htmlFor="email" className="text-sm font-medium text-zinc-300">
-              Email
+              Имейл
             </label>
             <input
               id="email"
@@ -212,7 +212,7 @@ export default function LoginPage() {
 
           <div>
             <label htmlFor="password" className="text-sm font-medium text-zinc-300">
-              Password
+              Парола
             </label>
             <div className="relative">
               <input
@@ -227,8 +227,8 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword((current) => !current)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                title={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? "Скрий паролата" : "Покажи паролата"}
+                title={showPassword ? "Скрий паролата" : "Покажи паролата"}
                 disabled={isSubmitting}
                 className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-zinc-400 transition hover:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-600 disabled:opacity-50"
               >
@@ -300,7 +300,7 @@ export default function LoginPage() {
             disabled={isSubmitting}
             className="mt-2 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50"
           >
-            {isSubmitting ? "Signing in…" : "Login"}
+            {isSubmitting ? "Влизане..." : "Вход"}
           </button>
 
           <p className="mt-4 text-center text-xs text-zinc-500">

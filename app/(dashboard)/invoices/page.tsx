@@ -37,6 +37,14 @@ function getStatusBadgeClass(status: InvoiceStatus) {
   return "border-zinc-200 bg-zinc-100 text-zinc-700";
 }
 
+function getStatusLabel(status: InvoiceStatus) {
+  if (status === "paid") return "Платена";
+  if (status === "overdue") return "Просрочена";
+  if (status === "sent") return "Изпратена";
+  if (status === "waiting") return "Чакаща";
+  return "Чернова";
+}
+
 export default function InvoicesPage() {
   const router = useRouter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -54,7 +62,7 @@ export default function InvoicesPage() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        setErrorMessage("Could not load invoices. Please refresh and try again.");
+        setErrorMessage("Неуспешно зареждане на фактурите. Моля, опитайте отново.");
         setInvoices([]);
         setIsLoading(false);
         return;
@@ -81,19 +89,19 @@ export default function InvoicesPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Invoices</h1>
-          <p className="text-sm text-zinc-500">Track invoice status, due dates, and amounts in one place.</p>
+          <h1 className="text-2xl font-semibold text-zinc-900">Фактури</h1>
+          <p className="text-sm text-zinc-500">Следете статус, падеж и суми на фактурите.</p>
         </div>
         <Link
           href="/invoices/add"
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
         >
-          Add invoice
+          Добави фактура
         </Link>
       </div>
 
       {isLoading && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Loading invoices...</div>
+        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Зареждане на фактури...</div>
       )}
 
       {!isLoading && errorMessage && (
@@ -102,10 +110,10 @@ export default function InvoicesPage() {
 
       {!isLoading && !errorMessage && invoices.length === 0 && (
         <EmptyState
-          title="No invoices yet"
-          description="Create and track invoices, amounts, and payment status. Add your first invoice to get started."
+          title="Все още няма фактури"
+          description="Създайте първата фактура, за да започнете да следите плащанията."
           actionHref="/invoices/add"
-          actionLabel="Add invoice"
+          actionLabel="Добави фактура"
         />
       )}
 
@@ -114,12 +122,12 @@ export default function InvoicesPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
               <tr>
-                <th className="px-4 py-3 font-medium">Invoice number</th>
-                <th className="px-4 py-3 font-medium">Client name</th>
-                <th className="px-4 py-3 font-medium">Amount</th>
-                <th className="px-4 py-3 font-medium">Issue date</th>
-                <th className="px-4 py-3 font-medium">Due date</th>
-                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Номер на фактура</th>
+                <th className="px-4 py-3 font-medium">Клиент</th>
+                <th className="px-4 py-3 font-medium">Сума</th>
+                <th className="px-4 py-3 font-medium">Дата на издаване</th>
+                <th className="px-4 py-3 font-medium">Падеж</th>
+                <th className="px-4 py-3 font-medium">Статус</th>
               </tr>
             </thead>
             <tbody>
@@ -138,7 +146,7 @@ export default function InvoicesPage() {
                     <span
                       className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusBadgeClass(invoice.status)}`}
                     >
-                      {invoice.status}
+                      {getStatusLabel(invoice.status)}
                     </span>
                   </td>
                 </tr>

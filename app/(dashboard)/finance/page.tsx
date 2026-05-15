@@ -52,6 +52,15 @@ function getStatusBadgeClass(status: string) {
   return "border-zinc-200 bg-zinc-100 text-zinc-700";
 }
 
+function getStatusLabel(status: string) {
+  if (status === "paid") return "Платена";
+  if (status === "overdue") return "Просрочена";
+  if (status === "sent") return "Изпратена";
+  if (status === "waiting") return "Чакаща";
+  if (status === "draft") return "Чернова";
+  return status;
+}
+
 export default function FinancePage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [adSpendRows, setAdSpendRows] = useState<AdSpendRow[]>([]);
@@ -87,7 +96,7 @@ export default function FinancePage() {
         .order("issue_date", { ascending: false });
 
       if (invoiceError) {
-        setErrorMessage("Could not load finance data. Please refresh and try again.");
+        setErrorMessage("Неуспешно зареждане на финансовите данни. Моля, опитайте отново.");
         setInvoices([]);
         setAdSpendRows([]);
         setIsLoading(false);
@@ -100,7 +109,7 @@ export default function FinancePage() {
         .in("name", ["Meta Ads", "Google Ads"]);
 
       if (servicesError) {
-        setErrorMessage("Could not load ad spend service setup. Please refresh and try again.");
+        setErrorMessage("Неуспешно зареждане на настройките за рекламен бюджет. Моля, опитайте отново.");
         setInvoices([]);
         setAdSpendRows([]);
         setIsLoading(false);
@@ -130,7 +139,7 @@ export default function FinancePage() {
           .in("service_id", serviceIds);
 
         if (spendError) {
-          setErrorMessage("Could not load ad spend data. Please refresh and try again.");
+          setErrorMessage("Неуспешно зареждане на данните за рекламен бюджет. Моля, опитайте отново.");
           setInvoices([]);
           setAdSpendRows([]);
           setIsLoading(false);
@@ -233,11 +242,11 @@ export default function FinancePage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold text-zinc-900">Finance</h1>
-        <p className="text-sm text-zinc-500">Overview of invoice performance and payment status.</p>
+        <h1 className="text-2xl font-semibold text-zinc-900">Финанси</h1>
+        <p className="text-sm text-zinc-500">Преглед на фактурите и статуса на плащанията.</p>
         <div className="max-w-56 rounded-xl border border-zinc-200 bg-white px-3 py-2">
           <label htmlFor="finance-month" className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">
-            Month
+            Месец
           </label>
           <input
             id="finance-month"
@@ -251,7 +260,7 @@ export default function FinancePage() {
 
       {isLoading && (
         <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">
-          Loading finance data...
+          Зареждане на финансови данни...
         </div>
       )}
 
@@ -263,21 +272,21 @@ export default function FinancePage() {
         <>
           <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
             <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-              <h2 className="text-sm font-medium text-zinc-700">Ad spend by client</h2>
+              <h2 className="text-sm font-medium text-zinc-700">Рекламен бюджет по клиенти</h2>
             </div>
             {adSpendRows.length === 0 ? (
-              <div className="p-4 text-sm text-zinc-500">No ad spend records for this month.</div>
+              <div className="p-4 text-sm text-zinc-500">Няма данни за рекламен бюджет за този месец.</div>
             ) : (
               <table className="min-w-full text-left text-sm">
                 <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Client</th>
-                    <th className="px-4 py-3 font-medium text-right">Meta Ads spend</th>
-                    <th className="px-4 py-3 font-medium text-right">Google Ads spend</th>
-                    <th className="px-4 py-3 font-medium text-right">Total spend</th>
-                    <th className="px-4 py-3 font-medium text-right">Meta Ads commission</th>
-                    <th className="px-4 py-3 font-medium text-right">Google Ads commission</th>
-                    <th className="px-4 py-3 font-medium text-right">Total commission</th>
+                    <th className="px-4 py-3 font-medium">Клиент</th>
+                    <th className="px-4 py-3 font-medium text-right">Разход Meta Ads</th>
+                    <th className="px-4 py-3 font-medium text-right">Разход Google Ads</th>
+                    <th className="px-4 py-3 font-medium text-right">Общ разход</th>
+                    <th className="px-4 py-3 font-medium text-right">Комисиона Meta Ads</th>
+                    <th className="px-4 py-3 font-medium text-right">Комисиона Google Ads</th>
+                    <th className="px-4 py-3 font-medium text-right">Обща комисиона</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -301,48 +310,48 @@ export default function FinancePage() {
 
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-600">Total invoices</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-600">Общо фактури</p>
               <p className="mt-2 text-2xl font-semibold text-zinc-900">{formatAmount(metrics.totalInvoicesAmount)}</p>
             </div>
 
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">Paid invoices</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">Платени фактури</p>
               <p className="mt-2 text-2xl font-semibold text-emerald-900">{formatAmount(metrics.paidInvoicesAmount)}</p>
             </div>
 
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-amber-700">Unpaid invoices</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-amber-700">Неплатени фактури</p>
               <p className="mt-2 text-2xl font-semibold text-amber-900">{formatAmount(metrics.unpaidInvoicesAmount)}</p>
             </div>
 
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-rose-700">Overdue invoices</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-rose-700">Просрочени фактури</p>
               <p className="mt-2 text-2xl font-semibold text-rose-900">{formatAmount(metrics.overdueInvoicesAmount)}</p>
             </div>
           </section>
 
           <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
             <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-              <h2 className="text-sm font-medium text-zinc-700">Recent invoices</h2>
+              <h2 className="text-sm font-medium text-zinc-700">Последни фактури</h2>
             </div>
 
             {recentInvoices.length === 0 ? (
               <EmptyState
-                title="No invoices yet"
-                description="Your recent invoices will appear here. Create your first invoice to start tracking payments."
+                title="Все още няма фактури"
+                description="Тук ще се показват последните фактури."
                 actionHref="/invoices/add"
-                actionLabel="Add invoice"
+                actionLabel="Добави фактура"
                 variant="compact"
               />
             ) : (
               <table className="min-w-full text-left text-sm">
                 <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Invoice number</th>
-                    <th className="px-4 py-3 font-medium">Client name</th>
-                    <th className="px-4 py-3 font-medium">Amount</th>
-                    <th className="px-4 py-3 font-medium">Due date</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium">Номер на фактура</th>
+                    <th className="px-4 py-3 font-medium">Клиент</th>
+                    <th className="px-4 py-3 font-medium">Сума</th>
+                    <th className="px-4 py-3 font-medium">Падеж</th>
+                    <th className="px-4 py-3 font-medium">Статус</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -356,7 +365,7 @@ export default function FinancePage() {
                         <span
                           className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusBadgeClass(invoice.status)}`}
                         >
-                          {invoice.status}
+                          {getStatusLabel(invoice.status)}
                         </span>
                       </td>
                     </tr>

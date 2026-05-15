@@ -30,7 +30,7 @@ export default function AddInvoicePage() {
       const { data, error } = await supabase.from("clients").select("id, name").order("name", { ascending: true });
 
       if (error) {
-        setErrorMessage("Could not load clients. Please refresh and try again.");
+        setErrorMessage("Неуспешно зареждане на клиентите. Моля, опитайте отново.");
         setClients([]);
         setIsLoadingClients(false);
         return;
@@ -76,25 +76,25 @@ export default function AddInvoicePage() {
     const notes = toNullableText(formData.get("notes"));
 
     if (!clientId) {
-      setErrorMessage("Client is required.");
+      setErrorMessage("Клиентът е задължителен.");
       setIsSaving(false);
       return;
     }
 
     if (!invoiceNumber) {
-      setErrorMessage("Invoice number is required.");
+      setErrorMessage("Номерът на фактурата е задължителен.");
       setIsSaving(false);
       return;
     }
 
     if (amount == null) {
-      setErrorMessage("Amount is required and must be a valid number.");
+      setErrorMessage("Сумата е задължителна и трябва да е валидно число.");
       setIsSaving(false);
       return;
     }
 
     if (!statuses.includes(status)) {
-      setErrorMessage("Please select a valid status.");
+      setErrorMessage("Моля, изберете валиден статус.");
       setIsSaving(false);
       return;
     }
@@ -110,7 +110,7 @@ export default function AddInvoicePage() {
     });
 
     if (error) {
-      setErrorMessage("Could not save invoice. Please try again.");
+      setErrorMessage("Неуспешно запазване на фактурата. Моля, опитайте отново.");
       setIsSaving(false);
       return;
     }
@@ -121,18 +121,18 @@ export default function AddInvoicePage() {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-zinc-900">Add Invoice</h1>
-        <p className="mt-1 text-sm text-zinc-500">Create a new invoice by filling in the form below.</p>
+        <h1 className="text-2xl font-semibold text-zinc-900">Добавяне на фактура</h1>
+        <p className="mt-1 text-sm text-zinc-500">Създайте нова фактура, като попълните формата.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="space-y-4">
           <div>
             <label htmlFor="client_id" className="text-sm font-medium text-zinc-700">
-              Client
+              Клиент
             </label>
             <select id="client_id" name="client_id" required disabled={isLoadingClients} className={inputClassName}>
-              <option value="">{isLoadingClients ? "Loading clients..." : "Select a client"}</option>
+              <option value="">{isLoadingClients ? "Зареждане на клиенти..." : "Изберете клиент"}</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.name}
@@ -143,35 +143,35 @@ export default function AddInvoicePage() {
 
           <div>
             <label htmlFor="invoice_number" className="text-sm font-medium text-zinc-700">
-              Invoice number
+              Номер на фактура
             </label>
             <input id="invoice_number" name="invoice_number" type="text" required className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="amount" className="text-sm font-medium text-zinc-700">
-              Amount
+              Сума
             </label>
             <input id="amount" name="amount" type="number" min="0" step="0.01" required className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="issue_date" className="text-sm font-medium text-zinc-700">
-              Issue date
+              Дата на издаване
             </label>
             <input id="issue_date" name="issue_date" type="date" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="due_date" className="text-sm font-medium text-zinc-700">
-              Due date
+              Падеж
             </label>
             <input id="due_date" name="due_date" type="date" className={inputClassName} />
           </div>
 
           <div>
             <label htmlFor="status" className="text-sm font-medium text-zinc-700">
-              Status
+              Статус
             </label>
             <select id="status" name="status" required defaultValue="draft" className={inputClassName}>
               {statuses.map((statusValue) => (
@@ -184,7 +184,7 @@ export default function AddInvoicePage() {
 
           <div>
             <label htmlFor="notes" className="text-sm font-medium text-zinc-700">
-              Notes
+              Бележки
             </label>
             <textarea id="notes" name="notes" rows={4} className={`${inputClassName} resize-y`} />
           </div>
@@ -199,14 +199,14 @@ export default function AddInvoicePage() {
             disabled={isSaving}
             className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Cancel
+            Отказ
           </button>
           <button
             type="submit"
             disabled={isSaving || isLoadingClients}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSaving ? "Saving..." : "Save invoice"}
+            {isSaving ? "Запазване..." : "Запази фактурата"}
           </button>
         </div>
       </form>

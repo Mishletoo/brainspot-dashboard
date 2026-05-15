@@ -45,7 +45,7 @@ export default function EditClientPage() {
         .single();
 
       if (error || !data) {
-        setErrorMessage("Could not load client. It may not exist.");
+        setErrorMessage("Неуспешно зареждане на клиента. Възможно е да не съществува.");
         setClient(null);
         setIsLoading(false);
         return;
@@ -95,7 +95,7 @@ export default function EditClientPage() {
       .eq("id", id);
 
     if (error) {
-      setErrorMessage("Could not update client. Please try again.");
+      setErrorMessage("Неуспешно обновяване на клиента. Моля, опитайте отново.");
       setIsSaving(false);
       return;
     }
@@ -110,7 +110,7 @@ export default function EditClientPage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-2xl">
-        <p className="text-sm text-zinc-600">Loading client...</p>
+        <p className="text-sm text-zinc-600">Зареждане на клиент...</p>
       </div>
     );
   }
