@@ -44,8 +44,10 @@ export default function AddEmployeePage() {
       hours_per_day: toNullableNumber(formData.get("hours_per_day")),
       gross_salary: toNullableNumber(formData.get("gross_salary")),
       net_salary: toNullableNumber(formData.get("net_salary")),
+      employer_contributions: toNullableNumber(formData.get("employer_contributions")),
       bonus: toNullableNumber(formData.get("bonus")),
       vouchers: toNullableNumber(formData.get("vouchers")),
+      monthly_hours: toNullableNumber(formData.get("monthly_hours")),
     };
 
     const { error } = await supabase.from("employees").insert(employeeData);
@@ -216,6 +218,39 @@ export default function AddEmployeePage() {
                 className={`${inputClassName} pl-7`}
               />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="employer_contributions" className="text-sm font-medium text-zinc-700">
+              Employer contributions
+            </label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+                €
+              </span>
+              <input
+                id="employer_contributions"
+                name="employer_contributions"
+                type="number"
+                step="0.01"
+                min="0"
+                className={`${inputClassName} pl-7`}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="monthly_hours" className="text-sm font-medium text-zinc-700">
+              Monthly hours
+            </label>
+            <input
+              id="monthly_hours"
+              name="monthly_hours"
+              type="number"
+              step="0.01"
+              min="0"
+              className={inputClassName}
+            />
           </div>
         </div>
 

@@ -21,8 +21,11 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -89,6 +92,36 @@ export default function ProfilePage() {
     setIsSaving(false);
   };
 
+  const handlePasswordSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    if (newPassword.trim().length < 8) {
+      setErrorMessage("Password must be at least 8 characters.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setErrorMessage("Passwords do not match.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      setErrorMessage("Could not change password. Please try again.");
+      setIsChangingPassword(false);
+      return;
+    }
+
+    setNewPassword("");
+    setConfirmPassword("");
+    setSuccessMessage("Password updated successfully.");
+    setIsChangingPassword(false);
+  };
+
   const displayName =
     [profile?.first_name, profile?.last_name].filter((part) => part && part.trim().length > 0).join(" ") ||
     "Your profile";
@@ -114,6 +147,17 @@ export default function ProfilePage() {
             <div className="mb-6 rounded-lg border border-zinc-700 bg-zinc-950/40 p-4">
               <p className="text-sm font-medium text-zinc-100">{displayName}</p>
               {profile?.email && <p className="mt-1 text-xs text-zinc-400">{profile.email}</p>}
+            </div>
+
+            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="rounded-lg border border-zinc-700 bg-zinc-950/40 p-4">
+                <p className="text-xs uppercase tracking-wide text-zinc-500">Name</p>
+                <p className="mt-1 text-sm text-zinc-100">{displayName}</p>
+              </div>
+              <div className="rounded-lg border border-zinc-700 bg-zinc-950/40 p-4">
+                <p className="text-xs uppercase tracking-wide text-zinc-500">Email</p>
+                <p className="mt-1 text-sm text-zinc-100">{profile?.email ?? "-"}</p>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -181,6 +225,52 @@ export default function ProfilePage() {
                   className="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50"
                 >
                   {isSaving ? "Saving…" : "Save changes"}
+                </button>
+              </div>
+            </form>
+
+            <form onSubmit={handlePasswordSubmit} className="mt-8 flex flex-col gap-4 border-t border-zinc-700 pt-6">
+              <div>
+                <h2 className="text-sm font-semibold text-zinc-100">Change password</h2>
+                <p className="mt-1 text-xs text-zinc-400">Use at least 8 characters for better security.</p>
+              </div>
+              <div>
+                <label htmlFor="new_password" className="text-sm font-medium text-zinc-300">
+                  New password
+                </label>
+                <input
+                  id="new_password"
+                  name="new_password"
+                  type="password"
+                  className={inputClassName}
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  disabled={isChangingPassword}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirm_password" className="text-sm font-medium text-zinc-300">
+                  Confirm password
+                </label>
+                <input
+                  id="confirm_password"
+                  name="confirm_password"
+                  type="password"
+                  className={inputClassName}
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  disabled={isChangingPassword}
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isChangingPassword}
+                  className="rounded-lg border border-zinc-600 px-4 py-2.5 text-sm font-medium text-zinc-100 hover:bg-zinc-800 disabled:opacity-50"
+                >
+                  {isChangingPassword ? "Updating..." : "Update password"}
                 </button>
               </div>
             </form>

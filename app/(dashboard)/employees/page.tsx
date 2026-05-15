@@ -4,7 +4,6 @@ import Link from "next/link";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
 
 type Employee = {
   id: string;
@@ -14,7 +13,38 @@ type Employee = {
   department: string | null;
   email: string | null;
   phone: string | null;
+  net_salary: number | null;
+  bonus: number | null;
+  monthly_cost: number | null;
+  auth_user_id: string | null;
+  is_active: boolean | null;
 };
+
+function formatCurrency(value: number | null) {
+  if (value == null || Number.isNaN(value)) return "-";
+  return `€${Number(value).toFixed(2)}`;
+}
+
+function getLinkedAccountStatus(employee: Employee) {
+  if (!employee.auth_user_id) {
+    return {
+      label: "Not linked",
+      className: "border-zinc-200 bg-zinc-50 text-zinc-700",
+    };
+  }
+
+  if (employee.is_active === false) {
+    return {
+      label: "Linked (inactive)",
+      className: "border-red-200 bg-red-50 text-red-700",
+    };
+  }
+
+  return {
+    label: "Linked (active)",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  };
+}
 
 export default function EmployeesPage() {
   const router = useRouter();
@@ -27,19 +57,19 @@ export default function EmployeesPage() {
       setIsLoading(true);
       setErrorMessage("");
 
-      const { data, error } = await supabase
-        .from("employees")
-        .select("id, first_name, last_name, position, department, email, phone")
-        .order("created_at", { ascending: false });
+      const response = await fetch("/api/employees", { method: "GET" });
+      const payload = (await response.json().catch(() => null)) as
+        | { employees?: Employee[]; error?: string }
+        | null;
 
-      if (error) {
-        setErrorMessage("Could not load employees. Please refresh and try again.");
+      if (!response.ok) {
+        setErrorMessage(payload?.error ?? "Could not load employees. Please refresh and try again.");
         setEmployees([]);
         setIsLoading(false);
         return;
       }
 
-      setEmployees(data ?? []);
+      setEmployees(payload?.employees ?? []);
       setIsLoading(false);
     };
 
@@ -83,29 +113,49 @@ export default function EmployeesPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
               <tr>
-                <th className="px-4 py-3 font-medium">First name</th>
-                <th className="px-4 py-3 font-medium">Last name</th>
+                <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Position</th>
                 <th className="px-4 py-3 font-medium">Department</th>
+                <th className="px-4 py-3 font-medium">Net salary</th>
+                <th className="px-4 py-3 font-medium">Bonus</th>
+                <th className="px-4 py-3 font-medium">Monthly cost</th>
+                <th className="px-4 py-3 font-medium">Linked account</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Phone</th>
               </tr>
             </thead>
             <tbody>
-              {employees.map((employee) => (
-                <tr
-                  key={employee.id}
-                  onClick={() => router.push(`/employees/${employee.id}`)}
-                  className="cursor-pointer border-b border-zinc-100 transition-colors hover:bg-zinc-50 last:border-b-0"
-                >
-                  <td className="px-4 py-3 text-zinc-900">{employee.first_name || "-"}</td>
-                  <td className="px-4 py-3 text-zinc-900">{employee.last_name || "-"}</td>
-                  <td className="px-4 py-3 text-zinc-700">{employee.position || "-"}</td>
-                  <td className="px-4 py-3 text-zinc-700">{employee.department || "-"}</td>
-                  <td className="px-4 py-3 text-zinc-700">{employee.email || "-"}</td>
-                  <td className="px-4 py-3 text-zinc-700">{employee.phone || "-"}</td>
-                </tr>
-              ))}
+              {employees.map((employee) => {
+                const accountStatus = getLinkedAccountStatus(employee);
+                const fullName =
+                  [employee.first_name, employee.last_name]
+                    .filter((value) => typeof value === "string" && value.trim().length > 0)
+                    .join(" ") || "-";
+
+                return (
+                  <tr
+                    key={employee.id}
+                    onClick={() => router.push(`/employees/${employee.id}`)}
+                    className="cursor-pointer border-b border-zinc-100 transition-colors hover:bg-zinc-50 last:border-b-0"
+                  >
+                    <td className="px-4 py-3 text-zinc-900">{fullName}</td>
+                    <td className="px-4 py-3 text-zinc-700">{employee.position || "-"}</td>
+                    <td className="px-4 py-3 text-zinc-700">{employee.department || "-"}</td>
+                    <td className="px-4 py-3 text-zinc-700">{formatCurrency(employee.net_salary)}</td>
+                    <td className="px-4 py-3 text-zinc-700">{formatCurrency(employee.bonus)}</td>
+                    <td className="px-4 py-3 text-zinc-700">{formatCurrency(employee.monthly_cost)}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${accountStatus.className}`}
+                      >
+                        {accountStatus.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-zinc-700">{employee.email || "-"}</td>
+                    <td className="px-4 py-3 text-zinc-700">{employee.phone || "-"}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

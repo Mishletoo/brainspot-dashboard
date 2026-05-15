@@ -18,8 +18,14 @@ type Employee = {
   hours_per_day: number | null;
   gross_salary: number | null;
   net_salary: number | null;
+  employer_contributions: number | null;
   bonus: number | null;
   vouchers: number | null;
+  monthly_hours: number | null;
+  monthly_cost: number | null;
+  hourly_cost: number | null;
+  auth_user_id: string | null;
+  is_active: boolean | null;
   created_at: string;
 };
 
@@ -116,6 +122,11 @@ export default function EmployeeDetailsPage() {
   }
 
   const fullName = [employee.first_name, employee.last_name].filter(Boolean).join(" ") || "Unknown";
+  const linkedStatusLabel = !employee.auth_user_id
+    ? "Not linked"
+    : employee.is_active === false
+      ? "Linked (inactive)"
+      : "Linked (active)";
 
   return (
     <div className="mx-auto w-full max-w-2xl">
@@ -158,6 +169,8 @@ export default function EmployeeDetailsPage() {
           <DetailRow label="Department" value={employee.department} />
           <DetailRow label="Email" value={employee.email} />
           <DetailRow label="Phone" value={employee.phone} />
+          <DetailRow label="Linked auth account" value={linkedStatusLabel} />
+          <DetailRow label="Auth user id" value={employee.auth_user_id ?? "-"} />
           <DetailRow label="Birth date" value={formatDate(employee.birth_date)} />
           <DetailRow label="Photo URL" value={employee.photo_url} />
         </dl>
@@ -171,8 +184,19 @@ export default function EmployeeDetailsPage() {
           <DetailRow label="Hours per day" value={employee.hours_per_day != null ? String(employee.hours_per_day) : "-"} />
           <DetailRow label="Gross salary" value={formatCurrency(employee.gross_salary)} />
           <DetailRow label="Net salary" value={formatCurrency(employee.net_salary)} />
+          <DetailRow label="Employer contributions" value={formatCurrency(employee.employer_contributions)} />
           <DetailRow label="Bonus" value={formatCurrency(employee.bonus)} />
           <DetailRow label="Vouchers" value={formatCurrency(employee.vouchers)} />
+          <DetailRow label="Monthly hours" value={employee.monthly_hours != null ? String(employee.monthly_hours) : "-"} />
+          <DetailRow label="Monthly cost" value={formatCurrency(employee.monthly_cost)} />
+          <DetailRow
+            label="Hourly cost"
+            value={
+              employee.hourly_cost != null && !Number.isNaN(employee.hourly_cost)
+                ? `€${Number(employee.hourly_cost).toFixed(4)}`
+                : "-"
+            }
+          />
         </dl>
       </div>
     </div>

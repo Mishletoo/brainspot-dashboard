@@ -1,48 +1,15 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { createServerClient } from "@supabase/ssr";
+import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabaseServer";
 
-function getSupabaseConfig() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const supabaseServiceRoleKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrdnhka3l6cG9tb3BobXBmc3J1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzA2NjY0MywiZXhwIjoyMDg4NjQyNjQzfQ.Mr4YSSg0JWPcBDBRHiy9oXuampyCKx7v0OHX3E6q_4Q";
-
-  if (!supabaseServiceRoleKey) {
-    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
-  }
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    const missing: string[] = [];
-    if (!supabaseUrl) missing.push("NEXT_PUBLIC_SUPABASE_URL");
-    if (!supabaseAnonKey) missing.push("NEXT_PUBLIC_SUPABASE_ANON_KEY");
-    throw new Error(`Missing Supabase configuration: ${missing.join(", ")}`);
-  }
-
-  return { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey };
+function isMissingIsActiveColumnError(error: { message?: string } | null) {
+  if (!error?.message) return false;
+  const message = error.message.toLowerCase();
+  return message.includes("is_active") && message.includes("column");
 }
 
 async function getAuthedClients() {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getSupabaseConfig();
-
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
-    auth: {
-      persistSession: false,
-    },
-  });
-
-  const cookieStore = await cookies();
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
-      },
-      set() {},
-      remove() {},
-    },
-  });
+  const supabaseAdmin = createSupabaseAdminClient();
+  const supabase = await createSupabaseServerClient();
 
   const {
     data: { user },
@@ -111,20 +78,46 @@ export async function GET(request: Request) {
       return NextResponse.json({ employee: data });
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data: employeesWithStatus, error: employeesWithStatusError } = await supabaseAdmin
       .from("employees")
-      .select("id, first_name, last_name, position, department, email, phone")
+      .select(
+        "id, first_name, last_name, position, department, email, phone, auth_user_id, is_active, hours_per_day, gross_salary, net_salary, employer_contributions, vouchers, bonus, monthly_hours, monthly_cost, hourly_cost",
+      )
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("[employees GET] Failed to load employees from Supabase", error);
+    if (employeesWithStatusError && isMissingIsActiveColumnError(employeesWithStatusError)) {
+      const { data: employeesWithoutStatus, error: employeesWithoutStatusError } = await supabaseAdmin
+        .from("employees")
+        .select(
+          "id, first_name, last_name, position, department, email, phone, auth_user_id, hours_per_day, gross_salary, net_salary, employer_contributions, vouchers, bonus, monthly_hours, monthly_cost, hourly_cost",
+        )
+        .order("created_at", { ascending: false });
+
+      if (employeesWithoutStatusError) {
+        console.error("[employees GET] Failed to load employees from Supabase", employeesWithoutStatusError);
+        return NextResponse.json(
+          { error: "Could not load employees from database." },
+          { status: 500 },
+        );
+      }
+
+      return NextResponse.json({
+        employees: (employeesWithoutStatus ?? []).map((employee) => ({
+          ...employee,
+          is_active: null,
+        })),
+      });
+    }
+
+    if (employeesWithStatusError) {
+      console.error("[employees GET] Failed to load employees from Supabase", employeesWithStatusError);
       return NextResponse.json(
         { error: "Could not load employees from database." },
         { status: 500 },
       );
     }
 
-    return NextResponse.json({ employees: data ?? [] });
+    return NextResponse.json({ employees: employeesWithStatus ?? [] });
   } catch (error: unknown) {
     const message =
       error instanceof Error && error.message

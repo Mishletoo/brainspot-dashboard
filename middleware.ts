@@ -12,6 +12,16 @@ function isPublicPath(pathname: string): boolean {
   return false;
 }
 
+function isAdminOnlyPath(pathname: string): boolean {
+  return pathname === "/users" || pathname.startsWith("/settings/users") || pathname.startsWith("/api/users");
+}
+
+function isMissingIsActiveColumnError(error: { message?: string } | null) {
+  if (!error?.message) return false;
+  const message = error.message.toLowerCase();
+  return message.includes("is_active") && message.includes("column");
+}
+
 function redirectWithCookies(
   request: NextRequest,
   url: string,
@@ -25,7 +35,7 @@ function redirectWithCookies(
 }
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: { headers: request.headers },
   });
 
@@ -62,13 +72,13 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  const { data: employee, error: employeeError } = await supabase
+  const { data: employeeByAuthId, error: employeeByAuthIdError } = await supabase
     .from("employees")
-    .select("app_role")
+    .select("id, app_role")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  if (employeeError || !employee || employee.app_role !== "admin") {
+  if (employeeByAuthIdError) {
     if (!isPublicPath(pathname)) {
       return redirectWithCookies(
         request,
@@ -77,6 +87,74 @@ export async function middleware(request: NextRequest) {
       );
     }
     return response;
+  }
+
+  let employee = employeeByAuthId;
+
+  if (!employee && user.email) {
+    const { data: employeeByEmail, error: employeeByEmailError } = await supabase
+      .from("employees")
+      .select("id, app_role, auth_user_id")
+      .ilike("email", user.email)
+      .maybeSingle();
+
+    if (!employeeByEmailError && employeeByEmail) {
+      if (!employeeByEmail.auth_user_id) {
+        const { error: linkError } = await supabase
+          .from("employees")
+          .update({ auth_user_id: user.id })
+          .eq("id", employeeByEmail.id)
+          .is("auth_user_id", null);
+
+        if (!linkError) {
+          employee = { id: employeeByEmail.id, app_role: employeeByEmail.app_role };
+        }
+      } else if (employeeByEmail.auth_user_id === user.id) {
+        employee = { id: employeeByEmail.id, app_role: employeeByEmail.app_role };
+      }
+    }
+  }
+
+  if (!employee) {
+    if (!isPublicPath(pathname)) {
+      return redirectWithCookies(
+        request,
+        new URL("/login", request.url).toString(),
+        response
+      );
+    }
+    return response;
+  }
+
+  const { data: statusRow, error: statusError } = await supabase
+    .from("employees")
+    .select("is_active")
+    .eq("id", employee.id)
+    .maybeSingle();
+
+  const isExplicitlyInactive = statusRow?.is_active === false;
+
+  if (statusError && !isMissingIsActiveColumnError(statusError)) {
+    console.warn("[middleware] Could not read employees.is_active; allowing access for backward compatibility.");
+  }
+
+  if (isExplicitlyInactive) {
+    if (!isPublicPath(pathname)) {
+      return redirectWithCookies(
+        request,
+        new URL("/login", request.url).toString(),
+        response
+      );
+    }
+    return response;
+  }
+
+  if (isAdminOnlyPath(pathname) && employee.app_role !== "admin") {
+    return redirectWithCookies(
+      request,
+      new URL("/", request.url).toString(),
+      response
+    );
   }
 
   return response;

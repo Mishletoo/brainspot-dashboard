@@ -12,6 +12,12 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const isMissingIsActiveColumnError = (error: { message?: string } | null) => {
+    if (!error?.message) return false;
+    const message = error.message.toLowerCase();
+    return message.includes("is_active") && message.includes("column");
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage("");
@@ -47,7 +53,7 @@ export default function LoginPage() {
         return;
       }
 
-      const { data: employee, error: fetchError } = await supabase
+      const { data: employeeByAuthId, error: fetchError } = await supabase
         .from("employees")
         .select("id, app_role")
         .eq("auth_user_id", userId)
@@ -70,6 +76,32 @@ export default function LoginPage() {
         return;
       }
 
+      let employee = employeeByAuthId;
+
+      if (!employee && authData.user?.email) {
+        const { data: employeeByEmail, error: emailLookupError } = await supabase
+          .from("employees")
+          .select("id, app_role, auth_user_id")
+          .ilike("email", authData.user.email)
+          .maybeSingle();
+
+        if (!emailLookupError && employeeByEmail) {
+          if (!employeeByEmail.auth_user_id) {
+            const { error: linkError } = await supabase
+              .from("employees")
+              .update({ auth_user_id: userId })
+              .eq("id", employeeByEmail.id)
+              .is("auth_user_id", null);
+
+            if (!linkError) {
+              employee = { id: employeeByEmail.id, app_role: employeeByEmail.app_role };
+            }
+          } else if (employeeByEmail.auth_user_id === userId) {
+            employee = { id: employeeByEmail.id, app_role: employeeByEmail.app_role };
+          }
+        }
+      }
+
       if (!employee) {
         try {
           await supabase.auth.signOut();
@@ -82,8 +114,31 @@ export default function LoginPage() {
         return;
       }
 
-      const appRole = employee.app_role === "admin" ? "admin" : "employee";
-      router.push(appRole === "admin" ? "/" : "/work-reports");
+      const { data: statusRow, error: statusError } = await supabase
+        .from("employees")
+        .select("is_active")
+        .eq("id", employee.id)
+        .maybeSingle();
+
+      const isExplicitlyInactive = statusRow?.is_active === false;
+
+      if (statusError && !isMissingIsActiveColumnError(statusError)) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("[Login] Could not read employees.is_active; allowing login for backward compatibility.");
+        }
+      }
+
+      if (isExplicitlyInactive) {
+        try {
+          await supabase.auth.signOut();
+        } catch (e) {
+          if (process.env.NODE_ENV === "development") console.error("[Login] signOut after inactive user:", e);
+        }
+        setErrorMessage("Този акаунт е деактивиран. Свържете се с администратор.");
+        return;
+      }
+
+      router.push("/");
       router.refresh();
     } catch (err) {
       const message = err instanceof Error ? err.message : "An unexpected error occurred.";

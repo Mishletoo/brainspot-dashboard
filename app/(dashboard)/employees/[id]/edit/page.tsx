@@ -20,8 +20,10 @@ type EmployeeFormValues = {
   hours_per_day: string;
   gross_salary: string;
   net_salary: string;
+  employer_contributions: string;
   bonus: string;
   vouchers: string;
+  monthly_hours: string;
 };
 
 const initialValues: EmployeeFormValues = {
@@ -36,8 +38,10 @@ const initialValues: EmployeeFormValues = {
   hours_per_day: "",
   gross_salary: "",
   net_salary: "",
+  employer_contributions: "",
   bonus: "",
   vouchers: "",
+  monthly_hours: "",
 };
 
 export default function EditEmployeePage() {
@@ -63,7 +67,7 @@ export default function EditEmployeePage() {
       const { data, error } = await supabase
         .from("employees")
         .select(
-          "first_name, last_name, position, department, email, phone, birth_date, photo_url, hours_per_day, gross_salary, net_salary, bonus, vouchers",
+          "first_name, last_name, position, department, email, phone, birth_date, photo_url, hours_per_day, gross_salary, net_salary, employer_contributions, bonus, vouchers, monthly_hours",
         )
         .eq("id", id)
         .single();
@@ -86,8 +90,11 @@ export default function EditEmployeePage() {
         hours_per_day: data.hours_per_day != null ? String(data.hours_per_day) : "",
         gross_salary: data.gross_salary != null ? String(data.gross_salary) : "",
         net_salary: data.net_salary != null ? String(data.net_salary) : "",
+        employer_contributions:
+          data.employer_contributions != null ? String(data.employer_contributions) : "",
         bonus: data.bonus != null ? String(data.bonus) : "",
         vouchers: data.vouchers != null ? String(data.vouchers) : "",
+        monthly_hours: data.monthly_hours != null ? String(data.monthly_hours) : "",
       });
       setIsLoading(false);
     };
@@ -129,8 +136,10 @@ export default function EditEmployeePage() {
       hours_per_day: toNullableNumber(formValues.hours_per_day),
       gross_salary: toNullableNumber(formValues.gross_salary),
       net_salary: toNullableNumber(formValues.net_salary),
+      employer_contributions: toNullableNumber(formValues.employer_contributions),
       bonus: toNullableNumber(formValues.bonus),
       vouchers: toNullableNumber(formValues.vouchers),
+      monthly_hours: toNullableNumber(formValues.monthly_hours),
     };
 
     const { error } = await supabase.from("employees").update(updatedEmployee).eq("id", id);
@@ -372,6 +381,41 @@ export default function EditEmployeePage() {
                 className={`${inputClassName} pl-7`}
               />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="employer_contributions" className="text-sm font-medium text-zinc-700">
+              Employer contributions
+            </label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+                €
+              </span>
+              <input
+                id="employer_contributions"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formValues.employer_contributions}
+                onChange={(event) => handleInputChange("employer_contributions", event.target.value)}
+                className={`${inputClassName} pl-7`}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="monthly_hours" className="text-sm font-medium text-zinc-700">
+              Monthly hours
+            </label>
+            <input
+              id="monthly_hours"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formValues.monthly_hours}
+              onChange={(event) => handleInputChange("monthly_hours", event.target.value)}
+              className={inputClassName}
+            />
           </div>
         </div>
 
