@@ -14,6 +14,7 @@ type WorkItem = {
   clientId: string | null;
   serviceId: string | null;
   taskId: string | null;
+  taskDescription: string | null;
   hours: number;
   notes: string;
   taskStatus: string;
@@ -328,7 +329,7 @@ export default function WorkReportsPage() {
   const [formValues, setFormValues] = useState({
     clientId: "",
     serviceId: "",
-    taskId: "",
+    taskDescription: "",
     hours: "",
     notes: "",
     dateValue: { start: "", end: "" } as { start: string; end: string },
@@ -484,6 +485,7 @@ export default function WorkReportsPage() {
         clientId: row.client_id ? String(row.client_id) : null,
         serviceId: row.service_id ? String(row.service_id) : null,
         taskId: row.task_id ? String(row.task_id) : null,
+        taskDescription: typeof row.task_description === "string" ? row.task_description : null,
         hours: parseHours(row.hours),
         notes: typeof row.notes === "string" ? row.notes : "",
         taskStatus: String(row.task_status ?? "waiting"),
@@ -565,10 +567,6 @@ export default function WorkReportsPage() {
     () => services.map((service) => ({ value: service.id, label: service.name })),
     [services]
   );
-  const taskSelectOptions = useMemo<SelectOption[]>(
-    () => tasks.map((task) => ({ value: task.id, label: task.name })),
-    [tasks]
-  );
   const prioritySelectOptions = useMemo<SelectOption[]>(
     () => PRIORITY_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
     []
@@ -637,6 +635,7 @@ export default function WorkReportsPage() {
       clientId: row.client_id ? String(row.client_id) : null,
       serviceId: row.service_id ? String(row.service_id) : null,
       taskId: row.task_id ? String(row.task_id) : null,
+      taskDescription: typeof row.task_description === "string" ? row.task_description : null,
       hours: parseHours(row.hours),
       notes: typeof row.notes === "string" ? row.notes : "",
       taskStatus: String(row.task_status ?? "waiting"),
@@ -811,7 +810,7 @@ export default function WorkReportsPage() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (!formValues.clientId || !formValues.serviceId || !formValues.taskId || !formValues.hours) {
+    if (!formValues.clientId || !formValues.serviceId || !formValues.taskDescription.trim() || !formValues.hours) {
       setErrorMessage("Моля, попълнете клиент, услуга, задача и часове.");
       return;
     }
@@ -826,7 +825,8 @@ export default function WorkReportsPage() {
       monthly_report_id: monthlyReportId,
       client_id: formValues.clientId,
       service_id: formValues.serviceId,
-      task_id: formValues.taskId,
+      task_id: null,
+      task_description: formValues.taskDescription.trim(),
       hours: Number.isFinite(hoursValue) ? hoursValue : 0,
       notes: formValues.notes.trim() || null,
       task_status: "waiting",
@@ -845,7 +845,7 @@ export default function WorkReportsPage() {
     setFormValues({
       clientId: "",
       serviceId: "",
-      taskId: "",
+      taskDescription: "",
       hours: "",
       notes: "",
       dateValue: { start: "", end: "" },
@@ -996,7 +996,7 @@ export default function WorkReportsPage() {
   const renderRowCard = (row: WorkItem, readOnly: boolean) => {
     const clientName = row.clientId ? clientById.get(row.clientId) ?? "-" : "-";
     const serviceName = row.serviceId ? serviceById.get(row.serviceId) ?? "-" : "-";
-    const taskName = row.taskId ? taskById.get(row.taskId) ?? "-" : "-";
+    const taskName = row.taskDescription?.trim() || (row.taskId ? taskById.get(row.taskId) ?? "-" : "-");
     const status = validTaskStatus(row.taskStatus);
     const draftEdit = draftEditForRow(row);
     const isEditingHours = editingField?.rowId === row.id && editingField.field === "hours";
@@ -1265,7 +1265,7 @@ export default function WorkReportsPage() {
   const renderDraftCompactRow = (row: WorkItem) => {
     const clientName = row.clientId ? clientById.get(row.clientId) ?? "-" : "-";
     const serviceName = row.serviceId ? serviceById.get(row.serviceId) ?? "-" : "-";
-    const taskName = row.taskId ? taskById.get(row.taskId) ?? "-" : "-";
+    const taskName = row.taskDescription?.trim() || (row.taskId ? taskById.get(row.taskId) ?? "-" : "-");
     const status = validTaskStatus(row.taskStatus);
     const draftEdit = draftEditForRow(row);
     const isEditingHours = editingField?.rowId === row.id && editingField.field === "hours";
@@ -1665,11 +1665,13 @@ export default function WorkReportsPage() {
 
                   <label className="flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Задача</span>
-                    <CustomSelect
-                      value={formValues.taskId}
-                      onChange={(nextTaskId) => setFormValues((prev) => ({ ...prev, taskId: nextTaskId }))}
-                      options={[{ value: "", label: "Избери задача" }, ...taskSelectOptions]}
-                      disabled={!monthState.isEditable || isSaving}
+                    <input
+                      type="text"
+                      value={formValues.taskDescription}
+                      onChange={(event) => setFormValues((prev) => ({ ...prev, taskDescription: event.target.value }))}
+                      className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+                      placeholder="Опишете конкретната задача"
+                      required
                     />
                   </label>
 
