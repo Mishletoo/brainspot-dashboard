@@ -46,7 +46,8 @@ function formatCurrency(value: number | null) {
 export default function EmployeeDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const idParam = params?.id;
+  const id = Array.isArray(idParam) ? idParam[0] : idParam;
 
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,20 +65,21 @@ export default function EmployeeDetailsPage() {
       setIsLoading(true);
       setErrorMessage("");
 
-      const { data, error } = await supabase
-        .from("employees")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const response = await fetch(`/api/employees?id=${encodeURIComponent(id)}`, {
+        method: "GET",
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { employee?: Employee; error?: string }
+        | null;
 
-      if (error) {
-        setErrorMessage("Could not load employee. It may not exist.");
+      if (!response.ok) {
+        setErrorMessage(payload?.error ?? "Could not load employee. It may not exist.");
         setEmployee(null);
         setIsLoading(false);
         return;
       }
 
-      setEmployee(data);
+      setEmployee(payload?.employee ?? null);
       setIsLoading(false);
     };
 
@@ -90,6 +92,12 @@ export default function EmployeeDetailsPage() {
 
     setDeleteErrorMessage("");
     setIsDeleting(true);
+
+    if (!id) {
+      setDeleteErrorMessage("Missing employee id.");
+      setIsDeleting(false);
+      return;
+    }
 
     const { error } = await supabase.from("employees").delete().eq("id", id);
 

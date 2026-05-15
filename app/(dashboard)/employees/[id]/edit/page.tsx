@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
 
 const inputClassName =
   "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200";
@@ -47,7 +46,8 @@ const initialValues: EmployeeFormValues = {
 export default function EditEmployeePage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const idParam = params?.id;
+  const id = Array.isArray(idParam) ? idParam[0] : idParam;
 
   const [formValues, setFormValues] = useState<EmployeeFormValues>(initialValues);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,37 +64,56 @@ export default function EditEmployeePage() {
       setIsLoading(true);
       setErrorMessage("");
 
-      const { data, error } = await supabase
-        .from("employees")
-        .select(
-          "first_name, last_name, position, department, email, phone, birth_date, photo_url, hours_per_day, gross_salary, net_salary, employer_contributions, bonus, vouchers, monthly_hours",
-        )
-        .eq("id", id)
-        .single();
+      const response = await fetch(`/api/employees?id=${encodeURIComponent(id)}`, {
+        method: "GET",
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | {
+            employee?: {
+              first_name?: string | null;
+              last_name?: string | null;
+              position?: string | null;
+              department?: string | null;
+              email?: string | null;
+              phone?: string | null;
+              birth_date?: string | null;
+              photo_url?: string | null;
+              hours_per_day?: number | null;
+              gross_salary?: number | null;
+              net_salary?: number | null;
+              employer_contributions?: number | null;
+              bonus?: number | null;
+              vouchers?: number | null;
+              monthly_hours?: number | null;
+            };
+            error?: string;
+          }
+        | null;
+      const employee = payload?.employee;
 
-      if (error || !data) {
-        setErrorMessage("Could not load employee data.");
+      if (!response.ok || !employee) {
+        setErrorMessage(payload?.error ?? "Could not load employee data.");
         setIsLoading(false);
         return;
       }
 
       setFormValues({
-        first_name: data.first_name ?? "",
-        last_name: data.last_name ?? "",
-        position: data.position ?? "",
-        department: data.department ?? "",
-        email: data.email ?? "",
-        phone: data.phone ?? "",
-        birth_date: data.birth_date ?? "",
-        photo_url: data.photo_url ?? "",
-        hours_per_day: data.hours_per_day != null ? String(data.hours_per_day) : "",
-        gross_salary: data.gross_salary != null ? String(data.gross_salary) : "",
-        net_salary: data.net_salary != null ? String(data.net_salary) : "",
+        first_name: employee.first_name ?? "",
+        last_name: employee.last_name ?? "",
+        position: employee.position ?? "",
+        department: employee.department ?? "",
+        email: employee.email ?? "",
+        phone: employee.phone ?? "",
+        birth_date: employee.birth_date ?? "",
+        photo_url: employee.photo_url ?? "",
+        hours_per_day: employee.hours_per_day != null ? String(employee.hours_per_day) : "",
+        gross_salary: employee.gross_salary != null ? String(employee.gross_salary) : "",
+        net_salary: employee.net_salary != null ? String(employee.net_salary) : "",
         employer_contributions:
-          data.employer_contributions != null ? String(data.employer_contributions) : "",
-        bonus: data.bonus != null ? String(data.bonus) : "",
-        vouchers: data.vouchers != null ? String(data.vouchers) : "",
-        monthly_hours: data.monthly_hours != null ? String(data.monthly_hours) : "",
+          employee.employer_contributions != null ? String(employee.employer_contributions) : "",
+        bonus: employee.bonus != null ? String(employee.bonus) : "",
+        vouchers: employee.vouchers != null ? String(employee.vouchers) : "",
+        monthly_hours: employee.monthly_hours != null ? String(employee.monthly_hours) : "",
       });
       setIsLoading(false);
     };
@@ -124,7 +143,14 @@ export default function EditEmployeePage() {
     setErrorMessage("");
     setIsSaving(true);
 
+    if (!id) {
+      setErrorMessage("Missing employee id.");
+      setIsSaving(false);
+      return;
+    }
+
     const updatedEmployee = {
+      id,
       first_name: toNullableText(formValues.first_name),
       last_name: toNullableText(formValues.last_name),
       position: toNullableText(formValues.position),
@@ -142,10 +168,19 @@ export default function EditEmployeePage() {
       monthly_hours: toNullableNumber(formValues.monthly_hours),
     };
 
-    const { error } = await supabase.from("employees").update(updatedEmployee).eq("id", id);
+    const response = await fetch("/api/employees", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedEmployee),
+    });
+    const payload = (await response.json().catch(() => null)) as
+      | { success?: boolean; error?: string }
+      | null;
 
-    if (error) {
-      setErrorMessage("Could not update employee. Please try again.");
+    if (!response.ok || payload?.success !== true) {
+      setErrorMessage(payload?.error ?? "Could not update employee. Please try again.");
       setIsSaving(false);
       return;
     }
