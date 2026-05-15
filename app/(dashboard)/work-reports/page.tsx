@@ -1262,6 +1262,253 @@ export default function WorkReportsPage() {
     );
   };
 
+  const renderDraftCompactRow = (row: WorkItem) => {
+    const clientName = row.clientId ? clientById.get(row.clientId) ?? "-" : "-";
+    const serviceName = row.serviceId ? serviceById.get(row.serviceId) ?? "-" : "-";
+    const taskName = row.taskId ? taskById.get(row.taskId) ?? "-" : "-";
+    const status = validTaskStatus(row.taskStatus);
+    const draftEdit = draftEditForRow(row);
+    const isEditingHours = editingField?.rowId === row.id && editingField.field === "hours";
+    const isEditingDate = editingField?.rowId === row.id && editingField.field === "date";
+    const isEditingPriority = editingField?.rowId === row.id && editingField.field === "priority";
+    const isEditingNotes = editingField?.rowId === row.id && editingField.field === "notes";
+    const isHoursSaving = Boolean(savingInlineFields[`${row.id}:hours`]);
+    const isDateSaving = Boolean(savingInlineFields[`${row.id}:date`]);
+    const isPrioritySaving = Boolean(savingInlineFields[`${row.id}:priority`]);
+    const isNotesSaving = Boolean(savingInlineFields[`${row.id}:notes`]);
+    const dateLabel = formatDateRangeDisplay(row.startDate, row.endDate);
+
+    const compactBadgeBase =
+      "inline-flex items-center rounded-md border border-zinc-700/80 bg-zinc-950/80 px-2 py-0.5 text-xs text-zinc-200";
+
+    return (
+      <div key={row.id} className="group">
+        <div
+          className={`rounded-xl border px-3 py-2.5 transition-colors duration-150 hover:border-zinc-600 hover:bg-zinc-800/60 ${taskStatusRowClasses(
+            status
+          )}`}
+        >
+          <div className="flex flex-col gap-2.5 md:grid md:min-h-[64px] md:grid-cols-[minmax(130px,1fr)_minmax(130px,1fr)_minmax(190px,1.2fr)_80px_120px_110px_130px_86px] md:items-center md:gap-2">
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Клиент</p>
+              <p className="truncate text-sm text-zinc-100">{clientName}</p>
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Услуга</p>
+              <p className="truncate text-sm text-zinc-200">{serviceName}</p>
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Задача</p>
+              <p className="truncate text-sm font-medium text-zinc-100">{taskName}</p>
+              <p className="truncate text-xs text-zinc-400">{row.notes || "Без бележки"}</p>
+            </div>
+
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Часове</p>
+              {isEditingHours ? (
+                <span className="inline-flex items-center gap-1">
+                  <input
+                    autoFocus
+                    type="number"
+                    min="0"
+                    step="0.25"
+                    value={draftEdit.hours}
+                    onChange={(e) => handleDraftFieldChange(row, "hours", e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void handleSaveDraftField(row, "hours");
+                      }
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        cancelEditingField(row);
+                      }
+                    }}
+                    disabled={isHoursSaving}
+                    className="w-16 rounded-md border border-zinc-600/70 bg-zinc-900 px-2 py-1 text-xs text-zinc-100 outline-none focus:border-sky-400/40 focus:ring-1 focus:ring-sky-400/20 disabled:opacity-60"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveDraftField(row, "hours")}
+                    disabled={isHoursSaving}
+                    className="rounded bg-sky-500/80 px-1.5 py-1 text-[10px] font-medium text-white hover:bg-sky-500 disabled:opacity-60"
+                  >
+                    ✓
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => startEditingField(row, "hours")}
+                  className={`${compactBadgeBase} hover:border-zinc-500/80 hover:bg-zinc-900`}
+                  title="Клик за редакция"
+                >
+                  {formatHours(row.hours)} ч
+                </button>
+              )}
+            </div>
+
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Дата</p>
+              {isEditingDate ? (
+                <div className="space-y-1.5">
+                  <DatePicker
+                    value={draftEdit.dateValue}
+                    onChange={(v) => handleDraftDateChange(row, v)}
+                    placeholder="Избери дата"
+                    locale="bg-BG"
+                  />
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveDraftField(row, "date")}
+                      disabled={isDateSaving}
+                      className="rounded bg-sky-500/80 px-1.5 py-0.5 text-[10px] font-medium text-white hover:bg-sky-500 disabled:opacity-60"
+                    >
+                      Запази
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => cancelEditingField(row)}
+                      className="rounded border border-zinc-600 px-1.5 py-0.5 text-[10px] text-zinc-400 hover:bg-zinc-700/50"
+                    >
+                      Отказ
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => startEditingField(row, "date")}
+                  className={`${compactBadgeBase} max-w-full truncate hover:border-zinc-500/80 hover:bg-zinc-900`}
+                  title="Клик за редакция"
+                >
+                  {dateLabel ?? "Избери"}
+                </button>
+              )}
+            </div>
+
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Приоритет</p>
+              {isEditingPriority ? (
+                <select
+                  autoFocus
+                  value={draftEdit.priority}
+                  onChange={(e) => {
+                    const newPriority = e.target.value;
+                    handleDraftPriorityChange(row, newPriority);
+                    void handleSaveDraftField(row, "priority", newPriority);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      cancelEditingField(row);
+                    }
+                  }}
+                  disabled={isPrioritySaving}
+                  className="w-full rounded-md border border-zinc-600/70 bg-zinc-900 px-2 py-1 text-xs text-zinc-100 outline-none focus:border-sky-400/40 focus:ring-1 focus:ring-sky-400/20 disabled:opacity-60"
+                >
+                  <option value="">Без приоритет</option>
+                  {PRIORITY_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => startEditingField(row, "priority")}
+                  className={`${compactBadgeBase} hover:border-zinc-500/80 hover:bg-zinc-900`}
+                  title="Клик за редакция"
+                >
+                  {row.priority != null && PRIORITY_VALUES.has(row.priority)
+                    ? priorityLabel(row.priority)
+                    : "Избери"}
+                </button>
+              )}
+            </div>
+
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Статус</p>
+              <select
+                value={status}
+                onChange={(e) => handleTaskStatusChange(row.id, e.target.value)}
+                className={`w-full rounded-full border px-2 py-1 text-xs font-medium outline-none transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-offset-zinc-900 ${taskStatusClasses(
+                  status
+                )}`}
+              >
+                {TASK_STATUS_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5 md:justify-end">
+              <button
+                type="button"
+                onClick={() => startEditingField(row, "notes")}
+                className="rounded-md border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-xs text-zinc-300 transition-colors hover:border-zinc-500 hover:bg-zinc-800"
+              >
+                Бележка
+              </button>
+              {isEditingHours || isEditingDate || isEditingPriority ? (
+                <button
+                  type="button"
+                  onClick={() => cancelEditingField(row)}
+                  className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-800/70"
+                >
+                  Отказ
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        {isEditingNotes && (
+          <div className="mt-2 rounded-lg border border-zinc-800 bg-zinc-950/90 p-3">
+            <textarea
+              autoFocus
+              rows={3}
+              value={draftEdit.notes}
+              onChange={(e) => handleDraftFieldChange(row, "notes", e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  cancelEditingField(row);
+                }
+              }}
+              disabled={isNotesSaving}
+              placeholder="Бележка"
+              className="w-full resize-y rounded-md border border-zinc-700/70 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100 outline-none transition-colors focus:border-sky-400/40 focus:ring-2 focus:ring-sky-400/20 disabled:opacity-60"
+            />
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => void handleSaveDraftField(row, "notes")}
+                disabled={isNotesSaving}
+                className="rounded-md bg-sky-500 px-2 py-1 text-xs font-medium text-white transition hover:bg-sky-400 disabled:opacity-60"
+              >
+                Запази
+              </button>
+              <button
+                type="button"
+                onClick={() => cancelEditingField(row)}
+                className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-300 transition hover:bg-zinc-800/60"
+              >
+                Отказ
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <section className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-100 shadow-xl md:p-6">
@@ -1492,7 +1739,7 @@ export default function WorkReportsPage() {
               <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
                 <h3 className="text-base font-semibold text-white">Чернова (неизпратено)</h3>
                 <p className="mt-1 text-sm text-zinc-500">Текущ месец: {monthLabel(monthValue)}</p>
-                <div className="mt-3 flex flex-wrap gap-3">
+                <div className="sticky top-0 z-10 mt-3 flex flex-wrap gap-3 rounded-lg border border-zinc-800 bg-zinc-900/95 p-2 backdrop-blur">
                   <label className="flex flex-col gap-1">
                     <span className="text-xs text-zinc-500">Клиент</span>
                     <CustomSelect
@@ -1510,7 +1757,7 @@ export default function WorkReportsPage() {
                     />
                   </label>
                 </div>
-                <div className="mt-3 space-y-3">
+                <div className="mt-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-2">
                   {filteredDraftRows.length === 0 && (
                     <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-500">
                       {draftRows.length === 0
@@ -1518,7 +1765,23 @@ export default function WorkReportsPage() {
                         : "Няма редове за избраните филтри."}
                     </div>
                   )}
-                  {filteredDraftRows.map((row) => renderRowCard(row, false))}
+                  {filteredDraftRows.length > 0 && (
+                    <div className="max-h-[620px] space-y-2 overflow-y-auto pr-1">
+                      <div className="sticky top-0 z-10 hidden grid-cols-[minmax(130px,1fr)_minmax(130px,1fr)_minmax(190px,1.2fr)_80px_120px_110px_130px_86px] gap-2 rounded-md border border-zinc-800 bg-zinc-900/95 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 backdrop-blur md:grid">
+                        <span>Клиент</span>
+                        <span>Услуга</span>
+                        <span>Задача</span>
+                        <span>Часове</span>
+                        <span>Дата</span>
+                        <span>Приоритет</span>
+                        <span>Статус</span>
+                        <span className="text-right">Действия</span>
+                      </div>
+                      <div className="space-y-2">
+                        {filteredDraftRows.map((row) => renderDraftCompactRow(row))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </article>
 
