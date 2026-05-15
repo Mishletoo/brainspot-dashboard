@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { canAccessAppPath, isAdminOnlyApiPath, resolveAppRole } from "@/lib/roles";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -10,10 +11,6 @@ function isPublicPath(pathname: string): boolean {
   if (pathname.startsWith("/_next")) return true;
   if (pathname === "/favicon.ico" || pathname.startsWith("/favicon")) return true;
   return false;
-}
-
-function isAdminOnlyPath(pathname: string): boolean {
-  return pathname === "/users" || pathname.startsWith("/settings/users") || pathname.startsWith("/api/users");
 }
 
 function isMissingIsActiveColumnError(error: { message?: string } | null) {
@@ -60,9 +57,13 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
+  const isApiRequest = pathname.startsWith("/api/");
 
   if (!user) {
     if (!isPublicPath(pathname)) {
+      if (isApiRequest) {
+        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      }
       return redirectWithCookies(
         request,
         new URL("/login", request.url).toString(),
@@ -80,6 +81,9 @@ export async function middleware(request: NextRequest) {
 
   if (employeeByAuthIdError) {
     if (!isPublicPath(pathname)) {
+      if (isApiRequest) {
+        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      }
       return redirectWithCookies(
         request,
         new URL("/login", request.url).toString(),
@@ -117,6 +121,9 @@ export async function middleware(request: NextRequest) {
 
   if (!employee) {
     if (!isPublicPath(pathname)) {
+      if (isApiRequest) {
+        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      }
       return redirectWithCookies(
         request,
         new URL("/login", request.url).toString(),
@@ -140,6 +147,9 @@ export async function middleware(request: NextRequest) {
 
   if (isExplicitlyInactive) {
     if (!isPublicPath(pathname)) {
+      if (isApiRequest) {
+        return NextResponse.json({ error: "Account is inactive" }, { status: 403 });
+      }
       return redirectWithCookies(
         request,
         new URL("/login", request.url).toString(),
@@ -149,12 +159,14 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  if (isAdminOnlyPath(pathname) && employee.app_role !== "admin") {
-    return redirectWithCookies(
-      request,
-      new URL("/", request.url).toString(),
-      response
-    );
+  const role = resolveAppRole(employee.app_role);
+
+  if (!isPublicPath(pathname) && isApiRequest && isAdminOnlyApiPath(pathname) && role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (!isPublicPath(pathname) && !isApiRequest && !canAccessAppPath(pathname, role)) {
+    return redirectWithCookies(request, new URL("/", request.url).toString(), response);
   }
 
   return response;

@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { resolveAppRole, type AppRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabaseClient";
 
 type Employee = {
@@ -113,6 +114,7 @@ function formatCurrency(value: number | null | undefined) {
 }
 
 export default function ReportsPage() {
+  const [currentRole, setCurrentRole] = useState<AppRole>("employee");
   const [monthValue, setMonthValue] = useState(() => {
     const now = new Date();
     const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -130,11 +132,60 @@ export default function ReportsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const canViewCompensation = currentRole === "admin";
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadRole() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        if (isMounted) setCurrentRole("employee");
+        return;
+      }
+
+      const { data: employeeByAuth } = await supabase
+        .from("employees")
+        .select("app_role")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+
+      if (employeeByAuth) {
+        if (isMounted) setCurrentRole(resolveAppRole(employeeByAuth.app_role));
+        return;
+      }
+
+      if (!user.email) {
+        if (isMounted) setCurrentRole("employee");
+        return;
+      }
+
+      const { data: employeeByEmail } = await supabase
+        .from("employees")
+        .select("app_role")
+        .ilike("email", user.email)
+        .maybeSingle();
+
+      if (isMounted) setCurrentRole(resolveAppRole(employeeByEmail?.app_role));
+    }
+
+    void loadRole();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const loadLookups = async () => {
       setIsLoading(true);
       setErrorMessage("");
+
+      const employeeSelect = canViewCompensation
+        ? "id, first_name, last_name, gross_salary, bonus, vouchers, hours_per_day"
+        : "id, first_name, last_name, hours_per_day";
 
       const [
         { data: employeesData, error: employeesError },
@@ -143,7 +194,7 @@ export default function ReportsPage() {
       ] = await Promise.all([
         supabase
           .from("employees")
-          .select("id, first_name, last_name, gross_salary, bonus, vouchers, hours_per_day")
+          .select(employeeSelect)
           .order("created_at", { ascending: false }),
         supabase.from("clients").select("id, name").order("name", { ascending: true }),
         supabase.from("services").select("id, name").order("name", { ascending: true }),
@@ -168,8 +219,10 @@ export default function ReportsPage() {
         return;
       }
 
+      const employeeRows = (employeesData ?? []) as unknown as Array<Record<string, unknown>>;
+
       setEmployees(
-        (employeesData ?? []).map((row: Record<string, unknown>) => ({
+        employeeRows.map((row) => ({
           id: String(row.id ?? ""),
           name: (() => {
             const first = typeof row.first_name === "string" ? row.first_name : "";
@@ -202,7 +255,7 @@ export default function ReportsPage() {
     };
 
     loadLookups();
-  }, []);
+  }, [canViewCompensation]);
 
   useEffect(() => {
     const loadMonthlyData = async () => {
@@ -565,6 +618,7 @@ export default function ReportsPage() {
   const hasData = filteredItems.length > 0;
 
   async function handleExportClientReport() {
+    if (!canViewCompensation) return;
     if (!selectedClientId || !clientCostTotals || clientServiceGroups.length === 0) return;
     if (isExporting) return;
 
@@ -1136,6 +1190,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Section 3: Себестойност по клиент */}
+            {canViewCompensation && (
             <section className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
               <div className="flex items-baseline justify-between gap-2">
                 <div>
@@ -1215,9 +1270,10 @@ export default function ReportsPage() {
                 </table>
               </div>
             </section>
+            )}
 
             {/* Section 4: Преглед на отчет за клиента */}
-            {selectedClientId && clientCostTotals && clientServiceGroups.length > 0 && (
+            {canViewCompensation && selectedClientId && clientCostTotals && clientServiceGroups.length > 0 && (
               <div id="client-report-preview">
                 <section className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between">

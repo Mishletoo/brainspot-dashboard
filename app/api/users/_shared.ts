@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { PostgrestError } from "@supabase/supabase-js";
-import { AppRole, isAppRole } from "@/lib/roles";
+import { AppRole, isAppRole, resolveAppRole } from "@/lib/roles";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabaseServer";
 
 type AuthContext =
@@ -87,7 +87,7 @@ export async function ensureAdminContext(): Promise<AuthContext> {
     console.warn("[users api] Could not read employees.is_active; proceeding for backward compatibility.");
   }
 
-  if (isExplicitlyInactive || employee.app_role !== "admin") {
+  if (isExplicitlyInactive || resolveAppRole(employee.app_role) !== "admin") {
     return { ok: false, response: NextResponse.json({ error: "Forbidden." }, { status: 403 }) };
   }
 

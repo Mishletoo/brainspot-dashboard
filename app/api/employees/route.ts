@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabaseServer";
+import { resolveAppRole } from "@/lib/roles";
 
 function isMissingIsActiveColumnError(error: { message?: string } | null) {
   if (!error?.message) return false;
@@ -25,17 +26,25 @@ async function getAuthedClients() {
 
   const { data: employee, error: employeeError } = await supabase
     .from("employees")
-    .select("app_role")
+    .select("id, app_role, is_active")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  if (employeeError || !employee || employee.app_role !== "admin") {
+  if (employeeError || !employee) {
     if (employeeError) {
       console.error(
         "[employees] Failed to load employee record for auth check",
         employeeError,
       );
     }
+    return { errorResponse: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+  }
+
+  if (employee.is_active === false) {
+    return { errorResponse: NextResponse.json({ error: "Account is inactive" }, { status: 403 }) };
+  }
+
+  if (resolveAppRole(employee.app_role) !== "admin") {
     return { errorResponse: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
 
