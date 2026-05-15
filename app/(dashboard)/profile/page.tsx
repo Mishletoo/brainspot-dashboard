@@ -23,6 +23,8 @@ export default function ProfilePage() {
   const [photoUrl, setPhotoUrl] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -97,13 +99,8 @@ export default function ProfilePage() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (newPassword.trim().length < 8) {
-      setErrorMessage("Паролата трябва да е поне 8 символа.");
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setErrorMessage("Паролите не съвпадат.");
+    if (!isPasswordFormValid) {
+      setErrorMessage(passwordValidationMessage);
       return;
     }
 
@@ -118,6 +115,8 @@ export default function ProfilePage() {
 
     setNewPassword("");
     setConfirmPassword("");
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
     setSuccessMessage("Паролата е обновена успешно.");
     setIsChangingPassword(false);
   };
@@ -125,6 +124,17 @@ export default function ProfilePage() {
   const displayName =
     [profile?.first_name, profile?.last_name].filter((part) => part && part.trim().length > 0).join(" ") ||
     "Вашият профил";
+  const trimmedNewPassword = newPassword.trim();
+  const hasBothPasswordFields = newPassword.length > 0 && confirmPassword.length > 0;
+  let passwordValidationMessage = "";
+
+  if (trimmedNewPassword.length > 0 && trimmedNewPassword.length < 8) {
+    passwordValidationMessage = "Паролата трябва да е поне 8 символа.";
+  } else if (confirmPassword.length > 0 && newPassword !== confirmPassword) {
+    passwordValidationMessage = "Паролите не съвпадат.";
+  }
+
+  const isPasswordFormValid = hasBothPasswordFields && passwordValidationMessage === "";
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col justify-center py-8">
@@ -238,36 +248,66 @@ export default function ProfilePage() {
                 <label htmlFor="new_password" className="text-sm font-medium text-zinc-300">
                   Нова парола
                 </label>
-                <input
-                  id="new_password"
-                  name="new_password"
-                  type="password"
-                  className={inputClassName}
-                  value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
-                  disabled={isChangingPassword}
-                />
+                <div className="relative">
+                  <input
+                    id="new_password"
+                    name="new_password"
+                    type={showNewPassword ? "text" : "password"}
+                    className={`${inputClassName} pr-20`}
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    disabled={isChangingPassword}
+                    aria-invalid={passwordValidationMessage.length > 0}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword((current) => !current)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-zinc-300 hover:text-zinc-100"
+                    aria-label={showNewPassword ? "Скрий новата парола" : "Покажи новата парола"}
+                    disabled={isChangingPassword}
+                  >
+                    {showNewPassword ? "Скрий" : "Покажи"}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label htmlFor="confirm_password" className="text-sm font-medium text-zinc-300">
                   Потвърди парола
                 </label>
-                <input
-                  id="confirm_password"
-                  name="confirm_password"
-                  type="password"
-                  className={inputClassName}
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  disabled={isChangingPassword}
-                />
+                <div className="relative">
+                  <input
+                    id="confirm_password"
+                    name="confirm_password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    className={`${inputClassName} pr-20`}
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    disabled={isChangingPassword}
+                    aria-invalid={passwordValidationMessage.length > 0}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((current) => !current)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-zinc-300 hover:text-zinc-100"
+                    aria-label={showConfirmPassword ? "Скрий потвърдената парола" : "Покажи потвърдената парола"}
+                    disabled={isChangingPassword}
+                  >
+                    {showConfirmPassword ? "Скрий" : "Покажи"}
+                  </button>
+                </div>
               </div>
+
+              {passwordValidationMessage && (
+                <p className="text-sm text-red-400" role="alert">
+                  {passwordValidationMessage}
+                </p>
+              )}
 
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={isChangingPassword}
+                  disabled={isChangingPassword || !isPasswordFormValid}
                   className="rounded-lg border border-zinc-600 px-4 py-2.5 text-sm font-medium text-zinc-100 hover:bg-zinc-800 disabled:opacity-50"
                 >
                   {isChangingPassword ? "Обновяване..." : "Обнови паролата"}
