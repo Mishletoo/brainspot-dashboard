@@ -132,7 +132,7 @@ export default function ProfilePage() {
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-zinc-100">Профил</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Преглед и редакция на личните данни. Заплатата и чувствителните полета се управляват само от администратори.
+            Преглед и редакция на данните в профила.
           </p>
         </div>
 
