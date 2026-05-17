@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { resolveAppRole, type AppRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabaseClient";
@@ -60,7 +60,26 @@ function CustomSelect({
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
   const selectedOption = options.find((option) => option.value === value) ?? null;
+  const updateMenuPosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportPadding = 8;
+    const width = Math.min(rect.width, Math.max(160, viewportWidth - viewportPadding * 2));
+    const maxLeft = viewportWidth - viewportPadding - width;
+    const left = Math.min(Math.max(rect.left, viewportPadding), Math.max(viewportPadding, maxLeft));
+
+    setMenuPosition({
+      top: rect.bottom + 6,
+      left,
+      width,
+    });
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -76,6 +95,30 @@ function CustomSelect({
     return () => window.removeEventListener("mousedown", handleOutsideClick);
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    updateMenuPosition();
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+    const handleViewportChange = () => {
+      setIsOpen(false);
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    window.addEventListener("resize", handleViewportChange);
+    window.addEventListener("scroll", handleViewportChange, true);
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("resize", handleViewportChange);
+      window.removeEventListener("scroll", handleViewportChange, true);
+    };
+  }, [isOpen, updateMenuPosition]);
+
   const triggerClasses = [
     "flex w-full items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition-colors focus-visible:border-zinc-500",
     disabled ? "opacity-60 cursor-not-allowed" : "hover:border-zinc-500/80",
@@ -83,14 +126,26 @@ function CustomSelect({
   ]
     .filter(Boolean)
     .join(" ");
+  const rootClasses = [
+    "relative overflow-visible",
+    isOpen ? "z-[70]" : "z-10",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <div ref={rootRef} className={`relative ${className}`}>
+    <div ref={rootRef} className={rootClasses}>
       <button
+        ref={triggerRef}
         id={id}
         type="button"
         disabled={disabled}
-        onClick={() => !disabled && setIsOpen((prev) => !prev)}
+        onClick={() => {
+          if (disabled) return;
+          if (!isOpen) updateMenuPosition();
+          setIsOpen((prev) => !prev);
+        }}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             setIsOpen(false);
@@ -113,7 +168,10 @@ function CustomSelect({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 z-40 mt-1 max-h-60 overflow-auto rounded-lg border border-zinc-700 bg-zinc-950 p-1 shadow-xl">
+        <div
+          className="fixed z-[9999] max-h-60 overflow-y-auto overflow-x-hidden rounded-lg border border-zinc-700 bg-zinc-950 p-1 shadow-2xl"
+          style={{ top: menuPosition.top, left: menuPosition.left, width: menuPosition.width }}
+        >
           <ul role="listbox" aria-labelledby={id} className="space-y-0.5">
             {options.map((option) => {
               const isActive = option.value === value;
@@ -1532,7 +1590,7 @@ export default function WorkReportsPage() {
               />
             </div>
             {currentRole === "admin" && employeeSelectOptions.length > 1 && (
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
+              <div className="overflow-visible rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
                 <label htmlFor="employee" className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">
                   Служител
                 </label>
@@ -1564,12 +1622,12 @@ export default function WorkReportsPage() {
         {!isLoading && !errorMessage && (
           <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
             <div className="space-y-3 xl:col-span-2">
-              <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+              <article className="overflow-visible rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
                 <h2 className="text-base font-semibold text-white">Рекламен бюджет за месеца</h2>
                 <p className="mt-1 text-sm text-zinc-500">{monthLabel(monthValue)}</p>
 
                 <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-                  <label className="flex flex-col gap-1">
+                  <label className="relative overflow-visible flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Клиент</span>
                     <CustomSelect
                       value={spendClientId}
@@ -1626,7 +1684,7 @@ export default function WorkReportsPage() {
                 </div>
               </article>
 
-              <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+              <article className="overflow-visible rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
                 <h2 className="text-base font-semibold text-white">Добави ред</h2>
                 {!monthState.isEditable && (
                   <p className="mt-2 rounded-lg border border-amber-700/70 bg-amber-950/40 px-3 py-2 text-sm text-amber-100">
@@ -1639,7 +1697,7 @@ export default function WorkReportsPage() {
                   aria-disabled={!monthState.isEditable}
                 >
                   <fieldset disabled={!monthState.isEditable || isSaving} className="contents">
-                  <label className="flex flex-col gap-1">
+                  <label className="relative overflow-visible flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Клиент</span>
                     <CustomSelect
                       value={formValues.clientId}
@@ -1653,7 +1711,7 @@ export default function WorkReportsPage() {
                     />
                   </label>
 
-                  <label className="flex flex-col gap-1">
+                  <label className="relative overflow-visible flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Услуга</span>
                     <CustomSelect
                       value={formValues.serviceId}
@@ -1663,7 +1721,7 @@ export default function WorkReportsPage() {
                     />
                   </label>
 
-                  <label className="flex flex-col gap-1">
+                  <label className="relative overflow-visible flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Задача</span>
                     <input
                       type="text"
@@ -1741,8 +1799,8 @@ export default function WorkReportsPage() {
               <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
                 <h3 className="text-base font-semibold text-white">Чернова (неизпратено)</h3>
                 <p className="mt-1 text-sm text-zinc-500">Текущ месец: {monthLabel(monthValue)}</p>
-                <div className="sticky top-0 z-10 mt-3 flex flex-wrap gap-3 rounded-lg border border-zinc-800 bg-zinc-900/95 p-2 backdrop-blur">
-                  <label className="flex flex-col gap-1">
+                <div className="sticky top-0 z-10 mt-3 flex flex-wrap gap-3 overflow-visible rounded-lg border border-zinc-800 bg-zinc-900/95 p-2 backdrop-blur">
+                  <label className="relative overflow-visible flex flex-col gap-1">
                     <span className="text-xs text-zinc-500">Клиент</span>
                     <CustomSelect
                       value={draftClientFilter}
@@ -1750,7 +1808,7 @@ export default function WorkReportsPage() {
                       options={clientFilterOptions}
                     />
                   </label>
-                  <label className="flex flex-col gap-1">
+                  <label className="relative overflow-visible flex flex-col gap-1">
                     <span className="text-xs text-zinc-500">Статус</span>
                     <CustomSelect
                       value={draftStatusFilter}
