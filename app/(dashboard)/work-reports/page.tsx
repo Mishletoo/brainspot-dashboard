@@ -638,6 +638,8 @@ export default function WorkReportsPage() {
     () => [{ value: "", label: "Всички клиенти" }, ...clients.map((client) => ({ value: client.id, label: client.name }))],
     [clients]
   );
+  const draftFilterSelectClasses =
+    "min-w-[180px] rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition-colors focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/40";
 
   const draftRows = useMemo(() => rows.filter((row) => row.status === "draft"), [rows]);
   const sentRows = useMemo(() => rows.filter((row) => row.status === "sent"), [rows]);
@@ -1301,10 +1303,10 @@ export default function WorkReportsPage() {
               <select
                 value={validTaskStatus(row.taskStatus)}
                 onChange={(e) => handleTaskStatusChange(row.id, e.target.value)}
-                className={`rounded-full border px-2.5 py-1 text-xs font-medium outline-none transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-offset-zinc-900 ${taskStatusClasses(validTaskStatus(row.taskStatus))}`}
+                className={`rounded-full border bg-zinc-900 px-2.5 py-1 text-xs font-medium text-zinc-100 outline-none transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-offset-zinc-900 ${taskStatusClasses(validTaskStatus(row.taskStatus))}`}
               >
                 {TASK_STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
+                  <option key={o.value} value={o.value} className="bg-zinc-900 text-zinc-100">
                     {o.label}
                   </option>
                 ))}
@@ -1495,12 +1497,12 @@ export default function WorkReportsPage() {
               <select
                 value={status}
                 onChange={(e) => handleTaskStatusChange(row.id, e.target.value)}
-                className={`w-full rounded-full border px-2 py-1 text-xs font-medium outline-none transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-offset-zinc-900 ${taskStatusClasses(
+                className={`w-full rounded-full border bg-zinc-900 px-2 py-1 text-xs font-medium text-zinc-100 outline-none transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-offset-zinc-900 ${taskStatusClasses(
                   status
                 )}`}
               >
                 {TASK_STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
+                  <option key={o.value} value={o.value} className="bg-zinc-900 text-zinc-100">
                     {o.label}
                   </option>
                 ))}
@@ -1801,21 +1803,33 @@ export default function WorkReportsPage() {
                 <h3 className="text-base font-semibold text-white">Чернова (неизпратено)</h3>
                 <p className="mt-1 text-sm text-zinc-500">Текущ месец: {monthLabel(monthValue)}</p>
                 <div className="sticky top-0 z-10 mt-3 flex flex-wrap gap-3 overflow-visible rounded-lg border border-zinc-800 bg-zinc-900/95 p-2 backdrop-blur">
-                  <label className="relative overflow-visible flex flex-col gap-1">
+                  <label className="flex flex-col gap-1">
                     <span className="text-xs text-zinc-500">Клиент</span>
-                    <CustomSelect
+                    <select
                       value={draftClientFilter}
-                      onChange={(nextClientFilter) => setDraftClientFilter(nextClientFilter)}
-                      options={clientFilterOptions}
-                    />
+                      onChange={(event) => setDraftClientFilter(event.target.value)}
+                      className={draftFilterSelectClasses}
+                    >
+                      {clientFilterOptions.map((option) => (
+                        <option key={option.value || "all-clients"} value={option.value} className="bg-zinc-900 text-zinc-100">
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                   </label>
-                  <label className="relative overflow-visible flex flex-col gap-1">
+                  <label className="flex flex-col gap-1">
                     <span className="text-xs text-zinc-500">Статус</span>
-                    <CustomSelect
+                    <select
                       value={draftStatusFilter}
-                      onChange={(nextStatusFilter) => setDraftStatusFilter(nextStatusFilter)}
-                      options={draftStatusFilterOptions}
-                    />
+                      onChange={(event) => setDraftStatusFilter(event.target.value)}
+                      className={draftFilterSelectClasses}
+                    >
+                      {draftStatusFilterOptions.map((option) => (
+                        <option key={option.value || "all-statuses"} value={option.value} className="bg-zinc-900 text-zinc-100">
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                 </div>
                 <div className="mt-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-2">

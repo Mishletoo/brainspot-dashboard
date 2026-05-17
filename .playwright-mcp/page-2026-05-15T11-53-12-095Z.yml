@@ -1,0 +1,134 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]: Brainspot
+      - navigation [ref=e5]:
+        - link "Dashboard" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Employees" [ref=e7] [cursor=pointer]:
+          - /url: /employees
+        - link "Clients" [ref=e8] [cursor=pointer]:
+          - /url: /clients
+        - link "Tasks" [ref=e9] [cursor=pointer]:
+          - /url: /tasks
+        - link "Work Reports" [ref=e10] [cursor=pointer]:
+          - /url: /work-reports
+        - link "Contracts" [ref=e11] [cursor=pointer]:
+          - /url: /contracts
+        - link "Invoices" [ref=e12] [cursor=pointer]:
+          - /url: /invoices
+        - link "Services" [ref=e13] [cursor=pointer]:
+          - /url: /services
+        - link "Projects" [ref=e14] [cursor=pointer]:
+          - /url: /projects
+        - link "Finance" [ref=e15] [cursor=pointer]:
+          - /url: /finance
+        - link "Reports" [ref=e16] [cursor=pointer]:
+          - /url: /reports
+        - link "Settings" [ref=e17] [cursor=pointer]:
+          - /url: /settings
+        - link "Manage Users" [ref=e18] [cursor=pointer]:
+          - /url: /settings/users
+        - link "Profile" [ref=e19] [cursor=pointer]:
+          - /url: /profile
+    - main [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - heading "Employees" [level=1] [ref=e24]
+            - paragraph [ref=e25]: Manage employees in one place.
+          - link "Add employee" [ref=e26] [cursor=pointer]:
+            - /url: /employees/add
+        - table [ref=e39]:
+          - rowgroup [ref=e40]:
+            - row "Name Position Department Net salary Bonus Monthly cost Linked account Email Phone" [ref=e41]:
+              - columnheader "Name" [ref=e42]
+              - columnheader "Position" [ref=e43]
+              - columnheader "Department" [ref=e44]
+              - columnheader "Net salary" [ref=e45]
+              - columnheader "Bonus" [ref=e46]
+              - columnheader "Monthly cost" [ref=e47]
+              - columnheader "Linked account" [ref=e48]
+              - columnheader "Email" [ref=e49]
+              - columnheader "Phone" [ref=e50]
+          - rowgroup [ref=e51]:
+            - row "Петър Събев Мениджмънт - €493.44 €1022.58 €1881.05 Linked (active) petar@digitalnosti.bg -" [ref=e52] [cursor=pointer]:
+              - cell "Петър Събев" [ref=e53]
+              - cell "Мениджмънт" [ref=e54]
+              - cell "-" [ref=e55]
+              - cell "€493.44" [ref=e56]
+              - cell "€1022.58" [ref=e57]
+              - cell "€1881.05" [ref=e58]
+              - cell "Linked (active)" [ref=e59]:
+                - generic [ref=e60]: Linked (active)
+              - cell "petar@digitalnosti.bg" [ref=e61]
+              - cell "-" [ref=e62]
+            - row "Диан Трифонов Видео едитър - €484.78 €715.81 €1561.00 Linked (active) dean@digitalnosti.bg -" [ref=e63] [cursor=pointer]:
+              - cell "Диан Трифонов" [ref=e64]
+              - cell "Видео едитър" [ref=e65]
+              - cell "-" [ref=e66]
+              - cell "€484.78" [ref=e67]
+              - cell "€715.81" [ref=e68]
+              - cell "€1561.00" [ref=e69]
+              - cell "Linked (active)" [ref=e70]:
+                - generic [ref=e71]: Linked (active)
+              - cell "dean@digitalnosti.bg" [ref=e72]
+              - cell "-" [ref=e73]
+            - row "Кристияна Станева Social media - €239.47 €425.21 €897.47 Linked (active) contentcreator@digitalnosti.bg -" [ref=e74] [cursor=pointer]:
+              - cell "Кристияна Станева" [ref=e75]
+              - cell "Social media" [ref=e76]
+              - cell "-" [ref=e77]
+              - cell "€239.47" [ref=e78]
+              - cell "€425.21" [ref=e79]
+              - cell "€897.47" [ref=e80]
+              - cell "Linked (active)" [ref=e81]:
+                - generic [ref=e82]: Linked (active)
+              - cell "contentcreator@digitalnosti.bg" [ref=e83]
+              - cell "-" [ref=e84]
+            - row "Мариян Маринов PPC - €487.66 €715.81 €1565.43 Linked (active) mariyan@digitalnosti.bg -" [ref=e85] [cursor=pointer]:
+              - cell "Мариян Маринов" [ref=e86]
+              - cell "PPC" [ref=e87]
+              - cell "-" [ref=e88]
+              - cell "€487.66" [ref=e89]
+              - cell "€715.81" [ref=e90]
+              - cell "€1565.43" [ref=e91]
+              - cell "Linked (active)" [ref=e92]:
+                - generic [ref=e93]: Linked (active)
+              - cell "mariyan@digitalnosti.bg" [ref=e94]
+              - cell "-" [ref=e95]
+            - row "Валентин Димитров Старши дизайнер - €487.66 €613.55 €1463.17 Linked (active) valentin@digitalnosti.bg -" [ref=e96] [cursor=pointer]:
+              - cell "Валентин Димитров" [ref=e97]
+              - cell "Старши дизайнер" [ref=e98]
+              - cell "-" [ref=e99]
+              - cell "€487.66" [ref=e100]
+              - cell "€613.55" [ref=e101]
+              - cell "€1463.17" [ref=e102]
+              - cell "Linked (active)" [ref=e103]:
+                - generic [ref=e104]: Linked (active)
+              - cell "valentin@digitalnosti.bg" [ref=e105]
+              - cell "-" [ref=e106]
+            - row "Богомил Петров Младши дизайнер - €358.82 €305.86 €962.12 Linked (active) bogomil@digitalnosti.bg -" [ref=e107] [cursor=pointer]:
+              - cell "Богомил Петров" [ref=e108]
+              - cell "Младши дизайнер" [ref=e109]
+              - cell "-" [ref=e110]
+              - cell "€358.82" [ref=e111]
+              - cell "€305.86" [ref=e112]
+              - cell "€962.12" [ref=e113]
+              - cell "Linked (active)" [ref=e114]:
+                - generic [ref=e115]: Linked (active)
+              - cell "bogomil@digitalnosti.bg" [ref=e116]
+              - cell "-" [ref=e117]
+            - row "Анна Константинова Manager Admin €511.81 €0.00 €784.37 Linked (active) anna@brainspot.bg 0886103147" [ref=e118] [cursor=pointer]:
+              - cell "Анна Константинова" [ref=e119]
+              - cell "Manager" [ref=e120]
+              - cell "Admin" [ref=e121]
+              - cell "€511.81" [ref=e122]
+              - cell "€0.00" [ref=e123]
+              - cell "€784.37" [ref=e124]
+              - cell "Linked (active)" [ref=e125]:
+                - generic [ref=e126]: Linked (active)
+              - cell "anna@brainspot.bg" [ref=e127]
+              - cell "0886103147" [ref=e128]
+  - button "Open Next.js Dev Tools" [ref=e33] [cursor=pointer]:
+    - img [ref=e34]
+  - alert [ref=e37]

@@ -1,0 +1,51 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]: Brainspot
+      - navigation [ref=e5]:
+        - link "Dashboard" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Tasks" [ref=e7] [cursor=pointer]:
+          - /url: /tasks
+        - link "Work Reports" [ref=e8] [cursor=pointer]:
+          - /url: /work-reports
+        - link "Profile" [ref=e9] [cursor=pointer]:
+          - /url: /profile
+    - main [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - heading "Управление на потребители" [level=1] [ref=e13]
+          - paragraph [ref=e14]: Създавайте login потребители и управлявайте роли и достъп до системата.
+        - generic [ref=e15]:
+          - heading "Нов потребител" [level=2] [ref=e16]
+          - generic [ref=e17]:
+            - generic [ref=e18]:
+              - text: Email
+              - textbox "Email" [ref=e19]:
+                - /placeholder: staff@brainspot.bg
+            - generic [ref=e20]:
+              - text: Role
+              - combobox "Role" [ref=e21]:
+                - option "Admin"
+                - option "Finance Admin"
+                - option "Manager"
+                - option "Employee" [selected]
+            - generic [ref=e22]:
+              - text: Temporary password
+              - textbox "Temporary password" [ref=e23]
+            - button "Създай потребител" [disabled] [ref=e25]
+        - table [ref=e27]:
+          - rowgroup [ref=e28]:
+            - row "Email Role Status Linked employee Created Actions" [ref=e29]:
+              - columnheader "Email" [ref=e30]
+              - columnheader "Role" [ref=e31]
+              - columnheader "Status" [ref=e32]
+              - columnheader "Linked employee" [ref=e33]
+              - columnheader "Created" [ref=e34]
+              - columnheader "Actions" [ref=e35]
+          - rowgroup [ref=e36]:
+            - row "Зареждане..." [ref=e37]:
+              - cell "Зареждане..." [ref=e38]
+  - button "Open Next.js Dev Tools" [ref=e44] [cursor=pointer]:
+    - img [ref=e45]
+  - alert [ref=e48]

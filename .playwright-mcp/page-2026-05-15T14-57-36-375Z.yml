@@ -1,0 +1,203 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]: Brainspot
+      - navigation [ref=e5]:
+        - link "Табло" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Служители" [ref=e7] [cursor=pointer]:
+          - /url: /employees
+        - link "Клиенти" [ref=e8] [cursor=pointer]:
+          - /url: /clients
+        - link "Задачи" [ref=e9] [cursor=pointer]:
+          - /url: /tasks
+        - link "Отчети за работа" [ref=e10] [cursor=pointer]:
+          - /url: /work-reports
+        - link "Договори" [ref=e11] [cursor=pointer]:
+          - /url: /contracts
+        - link "Фактури" [ref=e12] [cursor=pointer]:
+          - /url: /invoices
+        - link "Услуги" [ref=e13] [cursor=pointer]:
+          - /url: /services
+        - link "Проекти" [ref=e14] [cursor=pointer]:
+          - /url: /projects
+        - link "Финанси" [ref=e15] [cursor=pointer]:
+          - /url: /finance
+        - link "Справки" [ref=e16] [cursor=pointer]:
+          - /url: /reports
+        - link "Настройки" [ref=e17] [cursor=pointer]:
+          - /url: /settings
+        - link "Управление на потребители" [ref=e18] [cursor=pointer]:
+          - /url: /settings/users
+        - link "Профил" [ref=e19] [cursor=pointer]:
+          - /url: /profile
+    - main [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e36]:
+          - generic [ref=e37]:
+            - link "← Назад към служителите" [ref=e38] [cursor=pointer]:
+              - /url: /employees
+            - heading "Петър Събев" [level=1] [ref=e39]
+            - paragraph [ref=e40]: Мениджмънт
+          - generic [ref=e41]:
+            - link "Редактирай" [ref=e42] [cursor=pointer]:
+              - /url: /employees/6d6c3e61-63a5-46b1-b816-9ba8bb3c3a7e/edit
+            - button "Изтрий" [ref=e43]
+        - generic [ref=e44]:
+          - heading "Детайли" [level=2] [ref=e46]
+          - generic [ref=e47]:
+            - generic [ref=e48]:
+              - term [ref=e49]: Име
+              - definition [ref=e50]: Петър
+            - generic [ref=e51]:
+              - term [ref=e52]: Фамилия
+              - definition [ref=e53]: Събев
+            - generic [ref=e54]:
+              - term [ref=e55]: Позиция
+              - definition [ref=e56]: Мениджмънт
+            - generic [ref=e57]:
+              - term [ref=e58]: Отдел
+              - definition [ref=e59]: "-"
+            - generic [ref=e60]:
+              - term [ref=e61]: Имейл
+              - definition [ref=e62]: petar@digitalnosti.bg
+            - generic [ref=e63]:
+              - term [ref=e64]: Телефон
+              - definition [ref=e65]: "-"
+            - generic [ref=e66]:
+              - term [ref=e67]: Свързан акаунт
+              - definition [ref=e68]: Свързан (активен)
+            - generic [ref=e69]:
+              - term [ref=e70]: Auth user id
+              - definition [ref=e71]: 1391e756-2a28-4648-b7e1-f8a2e5bed4ee
+            - generic [ref=e72]:
+              - term [ref=e73]: Дата на раждане
+              - definition [ref=e74]: "-"
+            - generic [ref=e75]:
+              - term [ref=e76]: Снимка (URL)
+              - definition [ref=e77]: "-"
+        - generic [ref=e78]:
+          - heading "Възнаграждение" [level=2] [ref=e80]
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - term [ref=e83]: Часове на ден
+              - definition [ref=e84]: "8"
+            - generic [ref=e85]:
+              - term [ref=e86]: Брутна заплата
+              - definition [ref=e87]: €635.90
+            - generic [ref=e88]:
+              - term [ref=e89]: Нетна заплата
+              - definition [ref=e90]: €493.44
+            - generic [ref=e91]:
+              - term [ref=e92]: Осигуровки от работодател
+              - definition [ref=e93]: €120.31
+            - generic [ref=e94]:
+              - term [ref=e95]: Бонус
+              - definition [ref=e96]: €1022.58
+            - generic [ref=e97]:
+              - term [ref=e98]: Ваучери
+              - definition [ref=e99]: €102.26
+            - generic [ref=e100]:
+              - term [ref=e101]: Месечни часове
+              - definition [ref=e102]: "160"
+            - generic [ref=e103]:
+              - term [ref=e104]: Месечен разход
+              - definition [ref=e105]: €1881.05
+            - generic [ref=e106]:
+              - term [ref=e107]: Часова себестойност
+              - definition [ref=e108]: €11.7566
+    - button "Отвори чат" [active] [ref=e23]:
+      - img [ref=e24]
+    - generic [ref=e109]:
+      - generic [ref=e110]:
+        - generic [ref=e111]:
+          - paragraph [ref=e112]: Чат
+          - paragraph [ref=e113]: Екипна комуникация
+        - button "Затвори чат" [ref=e114]:
+          - img [ref=e115]
+      - generic [ref=e117]:
+        - complementary [ref=e118]:
+          - generic [ref=e119]:
+            - paragraph [ref=e120]: Лични съобщения
+            - generic [ref=e121]:
+              - button "БП Богомил Петров direct persist 1778855974511" [ref=e122]:
+                - generic [ref=e123]:
+                  - generic [ref=e124]: БП
+                  - generic [ref=e125]:
+                    - paragraph [ref=e126]: Богомил Петров
+                    - paragraph [ref=e127]: direct persist 1778855974511
+              - button "ВД Валентин Димитров Оооо Вале" [ref=e128]:
+                - generic [ref=e129]:
+                  - generic [ref=e130]: ВД
+                  - generic [ref=e131]:
+                    - paragraph [ref=e132]: Валентин Димитров
+                    - paragraph [ref=e133]: Оооо Вале
+              - button "ДТ Диан Трифонов Няма разговор" [ref=e134]:
+                - generic [ref=e135]:
+                  - generic [ref=e136]: ДТ
+                  - generic [ref=e137]:
+                    - paragraph [ref=e138]: Диан Трифонов
+                    - paragraph [ref=e139]: Няма разговор
+              - button "КС Кристияна Станева Няма разговор" [ref=e140]:
+                - generic [ref=e141]:
+                  - generic [ref=e142]: КС
+                  - generic [ref=e143]:
+                    - paragraph [ref=e144]: Кристияна Станева
+                    - paragraph [ref=e145]: Няма разговор
+              - button "ММ Мариян Маринов Няма разговор" [ref=e146]:
+                - generic [ref=e147]:
+                  - generic [ref=e148]: ММ
+                  - generic [ref=e149]:
+                    - paragraph [ref=e150]: Мариян Маринов
+                    - paragraph [ref=e151]: Няма разговор
+              - button "ПС Петър Събев Няма разговор" [ref=e152]:
+                - generic [ref=e153]:
+                  - generic [ref=e154]: ПС
+                  - generic [ref=e155]:
+                    - paragraph [ref=e156]: Петър Събев
+                    - paragraph [ref=e157]: Няма разговор
+          - generic [ref=e158]:
+            - generic [ref=e159]:
+              - paragraph [ref=e160]: Канали
+              - button "+ Канал" [ref=e161]
+            - generic [ref=e162]:
+              - 'button "Общ чат Анна Константинова: Здравейте всички" [ref=e163]':
+                - paragraph [ref=e165]: Общ чат
+                - paragraph [ref=e166]: "Анна Константинова: Здравейте всички"
+              - button "Социални мрежи Няма съобщения" [ref=e167]:
+                - paragraph [ref=e169]: Социални мрежи
+                - paragraph [ref=e170]: Няма съобщения
+              - button "Дизайн Няма съобщения" [ref=e171]:
+                - paragraph [ref=e173]: Дизайн
+                - paragraph [ref=e174]: Няма съобщения
+              - button "Платена реклама Няма съобщения" [ref=e175]:
+                - paragraph [ref=e177]: Платена реклама
+                - paragraph [ref=e178]: Няма съобщения
+              - button "Финанси Няма съобщения" [ref=e179]:
+                - paragraph [ref=e181]: Финанси
+                - paragraph [ref=e182]: Няма съобщения
+        - generic [ref=e183]:
+          - generic [ref=e184]:
+            - paragraph [ref=e185]: Общ чат
+            - paragraph [ref=e186]: Realtime
+          - generic [ref=e187]:
+            - generic [ref=e189]:
+              - paragraph [ref=e190]: RLS fix channel test 1778855791366
+              - paragraph [ref=e191]: 15.05, 17:36
+            - generic [ref=e193]:
+              - paragraph [ref=e194]: channel persist 1778855972673
+              - paragraph [ref=e195]: 15.05, 17:39
+            - generic [ref=e197]:
+              - paragraph [ref=e198]: Здравейте всички
+              - paragraph [ref=e199]: 15.05, 17:41
+          - generic [ref=e202]:
+            - generic [ref=e203]:
+              - button "Емоджита" [ref=e204]:
+                - img [ref=e205]
+              - button "Прикачване" [ref=e210]:
+                - img [ref=e211]
+            - textbox "Напишете съобщение..." [ref=e213]
+            - button "Изпрати" [disabled] [ref=e214]
+  - button "Open Next.js Dev Tools" [ref=e31] [cursor=pointer]:
+    - img [ref=e32]
+  - alert [ref=e35]
