@@ -22,6 +22,8 @@ type TaskEditorValues = {
   isImportant: boolean;
 };
 
+type PersonalTasksModuleMode = "page" | "rail" | "embedded";
+
 const initialEditorValues: TaskEditorValues = {
   title: "",
   details: "",
@@ -89,7 +91,10 @@ function taskPreview(details: string | null) {
   return `${details.slice(0, 90)}...`;
 }
 
-export default function TasksPage() {
+export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksModuleMode }) {
+  const isPageMode = mode === "page";
+  const isRailMode = mode === "rail";
+  const isEmbeddedMode = mode === "embedded";
   const [employeeId, setEmployeeId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<PersonalTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -485,17 +490,21 @@ export default function TasksPage() {
   const noTasks = !isLoading && !errorMessage && tasks.length === 0;
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
-      <div className="mb-4 flex items-start justify-between gap-3">
+    <div className={`${isPageMode ? "mx-auto max-w-3xl" : "max-w-none"} w-full`}>
+      <div className={`mb-4 flex items-start justify-between gap-3 ${isRailMode ? "sticky top-0 z-10 bg-white pb-2" : ""}`}>
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Задачи</h1>
-          <p className="text-sm text-zinc-500">Личен списък със задачи.</p>
+          <h1 className={`${isPageMode ? "text-2xl" : "text-base"} font-semibold text-zinc-900`}>
+            {isEmbeddedMode ? "Лични задачи" : "Задачи"}
+          </h1>
+          {!isRailMode && <p className="text-sm text-zinc-500">Личен списък със задачи.</p>}
         </div>
         {!showAddEditor && (
           <button
             type="button"
             onClick={() => setShowAddEditor(true)}
-            className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className={`rounded-lg bg-zinc-900 font-medium text-white hover:bg-zinc-800 ${
+              isRailMode ? "px-2.5 py-1.5 text-xs" : "px-3 py-2 text-sm"
+            }`}
           >
             + Добави задача
           </button>
@@ -533,7 +542,7 @@ export default function TasksPage() {
       )}
 
       {!isLoading && !errorMessage && tasks.length > 0 && (
-        <div className="space-y-4">
+        <div className={`space-y-4 ${isRailMode ? "pb-2" : ""}`}>
           {groupedActiveTasks.map(([groupKey, groupTasks]) => (
             <section key={groupKey}>
               <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">{dueGroupLabel(groupKey)}</h2>
@@ -563,4 +572,8 @@ export default function TasksPage() {
       )}
     </div>
   );
+}
+
+export default function TasksPage() {
+  return <PersonalTasksModule mode="page" />;
 }

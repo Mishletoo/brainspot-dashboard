@@ -9,7 +9,6 @@ const navLinks = [
   { label: "Табло", href: "/" },
   { label: "Служители", href: "/employees" },
   { label: "Клиенти", href: "/clients" },
-  { label: "Задачи", href: "/tasks" },
   { label: "Отчети за работа", href: "/work-reports" },
   { label: "Договори", href: "/contracts" },
   { label: "Фактури", href: "/invoices" },

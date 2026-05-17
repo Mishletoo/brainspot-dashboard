@@ -1,4 +1,4 @@
-import Sidebar from "@/components/layout/Sidebar";
+import DashboardShell from "@/components/layout/DashboardShell";
 import { resolveAppRole, type AppRole } from "@/lib/roles";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
@@ -35,11 +35,6 @@ export default async function DashboardLayout({
 }>) {
   const initialRole = await getCurrentUserRole();
 
-  return (
-    <div className="flex min-h-screen">
-      <Sidebar initialRole={initialRole} />
-      <main className="flex-1 p-8">{children}</main>
-    </div>
-  );
+  return <DashboardShell initialRole={initialRole}>{children}</DashboardShell>;
 }
 

@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { PersonalTasksModule } from "@/app/(dashboard)/tasks/page";
 import { resolveAppRole, type AppRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -1969,6 +1970,10 @@ export default function WorkReportsPage() {
               >
                 Изпрати и заключи месеца
               </button>
+
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-3">
+                <PersonalTasksModule mode="embedded" />
+              </div>
             </aside>
           </div>
         )}
