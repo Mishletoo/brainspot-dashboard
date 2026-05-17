@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 const inputClassName =
-  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200";
+  "bs-input mt-1 w-full px-3 py-2 text-sm";
 
 type ClientOption = {
   id: string;
@@ -117,16 +117,16 @@ export default function AddContractPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div className="mx-auto w-full max-w-2xl text-[var(--color-bs-text)]">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-zinc-900">Добавяне на договор</h1>
-        <p className="mt-1 text-sm text-zinc-500">Създайте нов договор, като попълните формата.</p>
+        <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Добавяне на договор</h1>
+        <p className="mt-1 text-sm text-[var(--color-bs-muted)]">Създайте нов договор, като попълните формата.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <form onSubmit={handleSubmit} className="bs-surface-card rounded-xl p-6">
         <div className="space-y-4">
           <div>
-            <label htmlFor="client_id" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="client_id" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Клиент
             </label>
             <select id="client_id" name="client_id" required disabled={isLoadingClients} className={inputClassName}>
@@ -140,90 +140,92 @@ export default function AddContractPage() {
           </div>
 
           <div>
-            <label htmlFor="contract_name" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="contract_name" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Име на договор
             </label>
             <input id="contract_name" name="contract_name" type="text" required className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="contract_file_url" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="contract_file_url" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Договор (URL)
             </label>
             <input id="contract_file_url" name="contract_file_url" type="url" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="contract_file_upload" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="contract_file_upload" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Качване на договор
             </label>
             <input
               id="contract_file_upload"
               name="contract_file_upload"
               type="file"
-              className={`${inputClassName} file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:font-medium file:text-zinc-700`}
+              className={`${inputClassName} file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-xs file:font-medium file:text-[var(--color-bs-text)]`}
             />
-            <p className="mt-1 text-xs text-zinc-500">Качването е незадължително. Ако изберете файл, ще се запази името му.</p>
+            <p className="mt-1 text-xs text-[var(--color-bs-subtle)]">
+              Качването е незадължително. Ако изберете файл, ще се запази името му.
+            </p>
           </div>
 
           <div>
-            <label htmlFor="signed_date" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="signed_date" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Дата на подписване
             </label>
             <input id="signed_date" name="signed_date" type="date" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="start_date" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="start_date" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Начална дата
             </label>
             <input id="start_date" name="start_date" type="date" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="end_date" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="end_date" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Крайна дата
             </label>
             <input id="end_date" name="end_date" type="date" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="notice_period_days" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="notice_period_days" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Срок на предизвестие (дни)
             </label>
             <input id="notice_period_days" name="notice_period_days" type="number" min={0} className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="reminder_days" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="reminder_days" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Дни за напомняне
             </label>
             <input id="reminder_days" name="reminder_days" type="number" min={0} className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="notes" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="notes" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Бележки
             </label>
             <textarea id="notes" name="notes" rows={4} className={`${inputClassName} resize-y`} />
           </div>
         </div>
 
-        {errorMessage && <p className="mt-4 text-sm text-red-600">{errorMessage}</p>}
+        {errorMessage && <p className="mt-4 text-sm text-rose-300">{errorMessage}</p>}
 
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={handleCancel}
             disabled={isSaving}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="bs-btn px-4 py-2 text-sm font-medium"
           >
             Отказ
           </button>
           <button
             type="submit"
             disabled={isSaving || isLoadingClients}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="bs-btn-primary px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? "Запазване..." : "Запази договора"}
           </button>

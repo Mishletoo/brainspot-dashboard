@@ -329,50 +329,84 @@ export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksMod
     onCancel: () => void,
     options?: { onDelete?: () => void; canDelete?: boolean }
   ) => (
-    <div className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+    <div
+      className={`space-y-3 rounded-xl p-3 ${
+        isRailMode
+          ? "bs-surface-card border border-[var(--color-bs-border-soft)]"
+          : "bs-surface-card border border-[var(--color-bs-border-soft)]"
+      }`}
+    >
       <input
         type="text"
         value={values.title}
         onChange={(event) => setValues((prev) => ({ ...prev, title: event.target.value }))}
         placeholder="Заглавие"
-        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500"
+        className={`w-full rounded-lg px-3 py-2 text-sm outline-none ${
+          isRailMode
+            ? "border border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.04)] text-[var(--color-bs-text)] placeholder:text-[var(--color-bs-subtle)] focus:border-[var(--color-bs-border-strong)]"
+            : "bs-input border border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.04)] text-[var(--color-bs-text)] placeholder:text-[var(--color-bs-subtle)] focus:border-[var(--color-bs-border-strong)]"
+        }`}
       />
       <textarea
         rows={3}
         value={values.details}
         onChange={(event) => setValues((prev) => ({ ...prev, details: event.target.value }))}
         placeholder="Детайли"
-        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500"
+        className={`w-full rounded-lg px-3 py-2 text-sm outline-none ${
+          isRailMode
+            ? "border border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.04)] text-[var(--color-bs-text)] placeholder:text-[var(--color-bs-subtle)] focus:border-[var(--color-bs-border-strong)]"
+            : "bs-input border border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.04)] text-[var(--color-bs-text)] placeholder:text-[var(--color-bs-subtle)] focus:border-[var(--color-bs-border-strong)]"
+        }`}
       />
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setValues((prev) => ({ ...prev, dueDate: todayIsoDate() }))}
-          className="rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+          className={`rounded-md border px-2.5 py-1 text-xs font-medium ${
+            isRailMode
+              ? "border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.05)] text-[var(--color-bs-muted)] hover:bg-[rgba(255,255,255,0.09)]"
+              : "bs-btn border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.05)] text-[var(--color-bs-muted)] hover:bg-[rgba(255,255,255,0.09)]"
+          }`}
         >
           Днес
         </button>
         <button
           type="button"
           onClick={() => setValues((prev) => ({ ...prev, dueDate: tomorrowIsoDate() }))}
-          className="rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+          className={`rounded-md border px-2.5 py-1 text-xs font-medium ${
+            isRailMode
+              ? "border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.05)] text-[var(--color-bs-muted)] hover:bg-[rgba(255,255,255,0.09)]"
+              : "bs-btn border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.05)] text-[var(--color-bs-muted)] hover:bg-[rgba(255,255,255,0.09)]"
+          }`}
         >
           Утре
         </button>
-        <label className="inline-flex items-center gap-1 rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700">
+        <label
+          className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium ${
+            isRailMode
+              ? "border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.05)] text-[var(--color-bs-muted)]"
+              : "bs-btn border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.05)] text-[var(--color-bs-muted)]"
+          }`}
+        >
           Избери дата
           <input
             type="date"
             value={values.dueDate}
             onChange={(event) => setValues((prev) => ({ ...prev, dueDate: event.target.value }))}
-            className="bg-transparent text-zinc-700 outline-none"
+            className={`bg-transparent outline-none ${
+              isRailMode ? "text-[var(--color-bs-muted)]" : "text-[var(--color-bs-muted)]"
+            }`}
           />
         </label>
         {values.dueDate && (
           <button
             type="button"
             onClick={() => setValues((prev) => ({ ...prev, dueDate: "" }))}
-            className="rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+            className={`rounded-md border px-2.5 py-1 text-xs font-medium ${
+              isRailMode
+                ? "border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.05)] text-[var(--color-bs-muted)] hover:bg-[rgba(255,255,255,0.09)]"
+                : "bs-btn border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.05)] text-[var(--color-bs-muted)] hover:bg-[rgba(255,255,255,0.09)]"
+            }`}
           >
             Изчисти дата
           </button>
@@ -382,8 +416,12 @@ export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksMod
           onClick={() => setValues((prev) => ({ ...prev, isImportant: !prev.isImportant }))}
           className={`rounded-md border px-2.5 py-1 text-xs font-medium ${
             values.isImportant
-              ? "border-amber-300 bg-amber-50 text-amber-700"
-              : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100"
+              ? isRailMode
+                ? "border-[rgba(194,232,74,0.45)] bg-[rgba(194,232,74,0.13)] text-[var(--color-bs-lime)]"
+                : "border-amber-300 bg-amber-50 text-amber-700"
+              : isRailMode
+                ? "border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.05)] text-[var(--color-bs-muted)] hover:bg-[rgba(255,255,255,0.09)]"
+                : "bs-btn border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.05)] text-[var(--color-bs-muted)] hover:bg-[rgba(255,255,255,0.09)]"
           }`}
         >
           {values.isImportant ? "★ Важна" : "☆ Маркирай важна"}
@@ -395,7 +433,11 @@ export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksMod
             type="button"
             onClick={options.onDelete}
             disabled={isSaving}
-            className="rounded-md border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+            className={`rounded-md border px-3 py-1.5 text-xs font-medium disabled:opacity-60 ${
+              isRailMode
+                ? "border-rose-300/35 bg-[rgba(255,110,140,0.08)] text-rose-300 hover:bg-[rgba(255,110,140,0.14)]"
+                  : "border-rose-300/35 bg-[rgba(255,110,140,0.08)] text-rose-300 hover:bg-[rgba(255,110,140,0.14)]"
+            }`}
           >
             Изтрий
           </button>
@@ -403,7 +445,11 @@ export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksMod
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+          className={`rounded-md border px-3 py-1.5 text-xs font-medium ${
+            isRailMode
+              ? "border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.05)] text-[var(--color-bs-muted)] hover:bg-[rgba(255,255,255,0.09)]"
+              : "bs-btn border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.05)] text-[var(--color-bs-muted)] hover:bg-[rgba(255,255,255,0.09)]"
+          }`}
         >
           Отказ
         </button>
@@ -411,7 +457,11 @@ export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksMod
           type="button"
           onClick={onSave}
           disabled={isSaving}
-          className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+          className={`rounded-md px-3 py-1.5 text-xs font-medium disabled:opacity-60 ${
+            isRailMode
+              ? "border border-[var(--color-bs-border-soft)] bg-[rgba(255,255,255,0.11)] text-[var(--color-bs-text)] hover:bg-[rgba(255,255,255,0.16)]"
+              : "bs-btn-primary border border-[var(--color-bs-accent)] text-white"
+          }`}
         >
           Запази
         </button>
@@ -422,9 +472,15 @@ export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksMod
   const renderTaskRow = (task: PersonalTask) => {
     const isEditing = editingTaskId === task.id;
     const dueLabel = formatDueDate(task.due_date);
+    const railRowShell = isRailMode
+      ? "bs-surface-card bs-surface-hover rounded-xl"
+      : "bs-surface-card bs-surface-hover rounded-lg border border-[var(--color-bs-border-soft)]";
+    const railRowInteractive = isRailMode
+      ? "hover:bg-white/[0.02]"
+      : "hover:bg-white/[0.02]";
 
     return (
-      <li key={task.id} className="rounded-lg border border-zinc-200 bg-white">
+      <li key={task.id} className={railRowShell}>
         {isEditing ? (
           <div className="p-3">
             {renderTaskEditor(
@@ -446,7 +502,7 @@ export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksMod
                 startEditTask(task);
               }
             }}
-            className="flex w-full cursor-pointer items-start gap-3 p-3 text-left hover:bg-zinc-50"
+            className={`flex w-full cursor-pointer items-start gap-3 p-3 text-left ${railRowInteractive}`}
           >
             <button
               type="button"
@@ -454,16 +510,34 @@ export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksMod
                 event.stopPropagation();
                 void toggleCompleted(task);
               }}
-              className={`mt-0.5 h-5 w-5 flex-shrink-0 rounded-full border ${
-                task.completed_at ? "border-emerald-500 bg-emerald-500" : "border-zinc-400 bg-white"
+              className={`mt-[2px] h-5 w-5 flex-shrink-0 rounded-full border transition-colors ${
+                task.completed_at
+                  ? "border-emerald-400 bg-emerald-400"
+                  : isRailMode
+                    ? "border-[var(--color-bs-border-strong)] bg-white/[0.03] hover:border-[var(--color-bs-lime)]"
+                    : "border-[var(--color-bs-border-strong)] bg-white/[0.03] hover:border-[var(--color-bs-lime)]"
               }`}
               aria-label={task.completed_at ? "Върни като активна" : "Маркирай като приключена"}
             />
             <div className="min-w-0 flex-1">
-              <p className={`text-sm font-medium ${task.completed_at ? "text-zinc-500 line-through" : "text-zinc-900"}`}>{task.title}</p>
-              {task.details && <p className="mt-0.5 text-xs text-zinc-500">{taskPreview(task.details)}</p>}
+              <p
+                className={`text-sm font-medium ${
+                  task.completed_at
+                    ? "line-through text-zinc-500"
+                    : isRailMode
+                      ? "text-[var(--color-bs-text)]"
+                      : "text-[var(--color-bs-text)]"
+                }`}
+              >
+                {task.title}
+              </p>
+              {task.details && (
+                <p className={`mt-0.5 text-xs ${isRailMode ? "text-[var(--color-bs-muted)]" : "text-[var(--color-bs-muted)]"}`}>
+                  {taskPreview(task.details)}
+                </p>
+              )}
               {dueLabel && (
-                <span className="mt-1 inline-flex rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-600">
+                <span className={`mt-1 ${isRailMode ? "bs-pill-due" : "bs-pill-due"}`}>
                   {dueLabel}
                 </span>
               )}
@@ -474,8 +548,14 @@ export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksMod
                 event.stopPropagation();
                 void toggleImportant(task);
               }}
-              className={`ml-2 rounded-md px-1.5 py-0.5 text-sm ${
-                task.is_important ? "text-amber-500" : "text-zinc-400 hover:text-zinc-600"
+              className={`ml-1 rounded-md px-1.5 py-0.5 text-sm transition-colors ${
+                task.is_important
+                  ? isRailMode
+                    ? "text-[var(--color-bs-lime)]"
+                    : "text-[var(--color-bs-lime)]"
+                  : isRailMode
+                    ? "text-[var(--color-bs-subtle)] hover:text-[var(--color-bs-muted)]"
+                    : "text-[var(--color-bs-subtle)] hover:text-[var(--color-bs-muted)]"
               }`}
               aria-label={task.is_important ? "Премахни важна" : "Маркирай важна"}
             >
@@ -491,19 +571,30 @@ export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksMod
 
   return (
     <div className={`${isPageMode ? "mx-auto max-w-3xl" : "max-w-none"} w-full`}>
-      <div className={`mb-4 flex items-start justify-between gap-3 ${isRailMode ? "sticky top-0 z-10 bg-white pb-2" : ""}`}>
+      <div
+        className={`mb-4 flex items-start justify-between gap-3 ${
+          isRailMode
+            ? "sticky top-0 z-10 border-b border-[var(--color-bs-border-soft)] bg-[rgba(21,24,30,0.88)] pb-2.5 pt-0.5 backdrop-blur-sm"
+            : ""
+        }`}
+      >
         <div>
-          <h1 className={`${isPageMode ? "text-2xl" : "text-base"} font-semibold text-zinc-900`}>
+          <h1
+            className={`${isPageMode ? "text-2xl text-[var(--color-bs-text)]" : "text-base text-[var(--color-bs-text)]"} font-semibold`}
+          >
             {isEmbeddedMode ? "Лични задачи" : "Задачи"}
           </h1>
-          {!isRailMode && <p className="text-sm text-zinc-500">Личен списък със задачи.</p>}
+          {!isRailMode && <p className="text-sm text-[var(--color-bs-muted)]">Личен списък със задачи.</p>}
+          {isRailMode && <p className="text-[11px] text-[var(--color-bs-subtle)]">Фокус и приоритети</p>}
         </div>
         {!showAddEditor && (
           <button
             type="button"
             onClick={() => setShowAddEditor(true)}
-            className={`rounded-lg bg-zinc-900 font-medium text-white hover:bg-zinc-800 ${
-              isRailMode ? "px-2.5 py-1.5 text-xs" : "px-3 py-2 text-sm"
+            className={`font-medium ${
+              isRailMode
+                ? "bs-btn-premium rounded-lg px-2.5 py-1.5 text-xs"
+                : "bs-btn-primary rounded-lg px-3 py-2 text-sm text-white"
             }`}
           >
             + Добави задача
@@ -528,16 +619,42 @@ export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksMod
         </form>
       )}
 
-      {isLoading && <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600">Зареждане...</div>}
+      {isLoading && (
+        <div
+          className={`rounded-xl p-4 text-sm ${
+            isRailMode
+              ? "bs-surface-card text-[var(--color-bs-muted)]"
+              : "bs-surface-card border border-[var(--color-bs-border-soft)] text-[var(--color-bs-muted)]"
+          }`}
+        >
+          Зареждане...
+        </div>
+      )}
 
       {!isLoading && errorMessage && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{errorMessage}</div>
+        <div
+          className={`rounded-xl p-4 text-sm ${
+            isRailMode
+              ? "border border-rose-300/35 bg-[rgba(255,110,140,0.1)] text-rose-300"
+              : "border border-rose-300/35 bg-[rgba(255,110,140,0.1)] text-rose-300"
+          }`}
+        >
+          {errorMessage}
+        </div>
       )}
 
       {noTasks && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center">
-          <p className="text-sm font-medium text-zinc-900">Все още няма задачи.</p>
-          <p className="mt-1 text-sm text-zinc-500">Добавете лична задача, за да я следите тук.</p>
+        <div
+          className={`rounded-xl p-6 text-center ${
+            isRailMode ? "bs-surface-card" : "bs-surface-card border border-[var(--color-bs-border-soft)]"
+          }`}
+        >
+          <p className={`text-sm font-medium ${isRailMode ? "text-[var(--color-bs-text)]" : "text-[var(--color-bs-text)]"}`}>
+            Все още няма задачи.
+          </p>
+          <p className={`mt-1 text-sm ${isRailMode ? "text-[var(--color-bs-muted)]" : "text-[var(--color-bs-muted)]"}`}>
+            Добавете лична задача, за да я следите тук.
+          </p>
         </div>
       )}
 
@@ -545,27 +662,47 @@ export function PersonalTasksModule({ mode = "page" }: { mode?: PersonalTasksMod
         <div className={`space-y-4 ${isRailMode ? "pb-2" : ""}`}>
           {groupedActiveTasks.map(([groupKey, groupTasks]) => (
             <section key={groupKey}>
-              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">{dueGroupLabel(groupKey)}</h2>
+              <h2
+                className={`mb-2 text-xs font-semibold uppercase tracking-wide ${
+                  isRailMode ? "text-[var(--color-bs-subtle)]" : "text-[var(--color-bs-subtle)]"
+                }`}
+              >
+                {dueGroupLabel(groupKey)}
+              </h2>
               <ul className="space-y-2">{groupTasks.map((task) => renderTaskRow(task))}</ul>
             </section>
           ))}
 
-          <section className="rounded-xl border border-zinc-200 bg-white">
+          <section className={isRailMode ? "bs-surface-card rounded-xl" : "bs-surface-card rounded-xl border border-[var(--color-bs-border-soft)]"}>
             <button
               type="button"
               onClick={() => setShowCompleted((prev) => !prev)}
-              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+              className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium ${
+                isRailMode
+                  ? "text-[var(--color-bs-muted)] hover:bg-white/[0.04]"
+                  : "text-[var(--color-bs-muted)] hover:bg-white/[0.04]"
+              }`}
             >
               <span>Приключени ({completedTasks.length})</span>
-              <span className="text-zinc-400">{showCompleted ? "▲" : "▼"}</span>
+              <span className={isRailMode ? "text-[var(--color-bs-subtle)]" : "text-[var(--color-bs-subtle)]"}>
+                {showCompleted ? "▲" : "▼"}
+              </span>
             </button>
             {showCompleted && completedTasks.length > 0 && (
-              <div className="border-t border-zinc-200 px-2 py-2">
+              <div className={`px-2 py-2 ${isRailMode ? "border-t border-[var(--color-bs-border-soft)]" : "border-t border-[var(--color-bs-border-soft)]"}`}>
                 <ul className="space-y-2">{completedTasks.map((task) => renderTaskRow(task))}</ul>
               </div>
             )}
             {showCompleted && completedTasks.length === 0 && (
-              <p className="border-t border-zinc-200 px-3 py-3 text-sm text-zinc-500">Няма приключени задачи.</p>
+              <p
+                className={`px-3 py-3 text-sm ${
+                  isRailMode
+                    ? "border-t border-[var(--color-bs-border-soft)] text-[var(--color-bs-muted)]"
+                    : "border-t border-[var(--color-bs-border-soft)] text-[var(--color-bs-muted)]"
+                }`}
+              >
+                Няма приключени задачи.
+              </p>
             )}
           </section>
         </div>

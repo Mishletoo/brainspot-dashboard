@@ -30,11 +30,11 @@ function formatAmount(value: number | null) {
 }
 
 function getStatusBadgeClass(status: InvoiceStatus) {
-  if (status === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (status === "overdue") return "border-red-200 bg-red-50 text-red-700";
-  if (status === "sent") return "border-blue-200 bg-blue-50 text-blue-700";
-  if (status === "waiting") return "border-amber-200 bg-amber-50 text-amber-700";
-  return "border-zinc-200 bg-zinc-100 text-zinc-700";
+  if (status === "paid") return "bs-status-success";
+  if (status === "overdue") return "bs-status-danger";
+  if (status === "sent") return "bs-status-info";
+  if (status === "waiting") return "bs-status-warning";
+  return "bs-status-neutral";
 }
 
 function getStatusLabel(status: InvoiceStatus) {
@@ -86,26 +86,28 @@ export default function InvoicesPage() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 text-[var(--color-bs-text)]">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Фактури</h1>
-          <p className="text-sm text-zinc-500">Следете статус, падеж и суми на фактурите.</p>
+          <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Фактури</h1>
+          <p className="text-sm text-[var(--color-bs-muted)]">Следете статус, падеж и суми на фактурите.</p>
         </div>
         <Link
           href="/invoices/add"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+          className="bs-btn-primary px-4 py-2 text-sm font-medium"
         >
           Добави фактура
         </Link>
       </div>
 
       {isLoading && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Зареждане на фактури...</div>
+        <div className="bs-surface-card rounded-xl p-6 text-sm text-[var(--color-bs-muted)]">Зареждане на фактури...</div>
       )}
 
       {!isLoading && errorMessage && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{errorMessage}</div>
+        <div className="rounded-xl border border-rose-300/35 bg-[rgba(255,110,140,0.1)] p-6 text-sm text-rose-300">
+          {errorMessage}
+        </div>
       )}
 
       {!isLoading && !errorMessage && invoices.length === 0 && (
@@ -114,13 +116,14 @@ export default function InvoicesPage() {
           description="Създайте първата фактура, за да започнете да следите плащанията."
           actionHref="/invoices/add"
           actionLabel="Добави фактура"
+          variant="dark"
         />
       )}
 
       {!isLoading && !errorMessage && invoices.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <div className="bs-surface-card bs-scroll-fade overflow-x-auto rounded-xl">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
+            <thead className="border-b border-[var(--color-bs-border-soft)] bg-white/[0.03] text-[var(--color-bs-muted)]">
               <tr>
                 <th className="px-4 py-3 font-medium">Номер на фактура</th>
                 <th className="px-4 py-3 font-medium">Клиент</th>
@@ -135,13 +138,13 @@ export default function InvoicesPage() {
                 <tr
                   key={invoice.id}
                   onClick={() => router.push(`/invoices/${invoice.id}`)}
-                  className="cursor-pointer border-b border-zinc-100 transition-colors hover:bg-zinc-50 last:border-b-0"
+                  className="cursor-pointer border-b border-[var(--color-bs-border-soft)] transition-colors hover:bg-white/[0.04] last:border-b-0"
                 >
-                  <td className="px-4 py-3 text-zinc-900">{invoice.invoice_number}</td>
-                  <td className="px-4 py-3 text-zinc-900">{invoice.client?.name || "-"}</td>
-                  <td className="px-4 py-3 text-zinc-700">{formatAmount(invoice.amount)}</td>
-                  <td className="px-4 py-3 text-zinc-700">{formatDate(invoice.issue_date)}</td>
-                  <td className="px-4 py-3 text-zinc-700">{formatDate(invoice.due_date)}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-text)]">{invoice.invoice_number}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-text)]">{invoice.client?.name || "-"}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatAmount(invoice.amount)}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatDate(invoice.issue_date)}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatDate(invoice.due_date)}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusBadgeClass(invoice.status)}`}

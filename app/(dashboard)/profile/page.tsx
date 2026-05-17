@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 const inputClassName =
-  "mt-1 w-full rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-600";
+  "bs-input mt-1 w-full px-3 py-2 text-sm";
 
 type EmployeeProfile = {
   id: string;
@@ -138,41 +138,41 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col justify-center py-8">
-      <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-6 shadow-lg">
+      <div className="bs-surface-card rounded-xl p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-zinc-100">Профил</h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Профил</h1>
+          <p className="mt-1 text-sm text-[var(--color-bs-muted)]">
             Преглед и редакция на данните в профила.
           </p>
         </div>
 
         {isLoading ? (
-          <p className="text-sm text-zinc-400">Зареждане на профила...</p>
+          <p className="text-sm text-[var(--color-bs-muted)]">Зареждане на профила...</p>
         ) : errorMessage ? (
-          <p className="text-sm text-red-400" role="alert">
+          <p className="text-sm text-rose-200" role="alert">
             {errorMessage}
           </p>
         ) : (
           <>
-            <div className="mb-6 rounded-lg border border-zinc-700 bg-zinc-950/40 p-4">
-              <p className="text-sm font-medium text-zinc-100">{displayName}</p>
-              {profile?.email && <p className="mt-1 text-xs text-zinc-400">{profile.email}</p>}
+            <div className="mb-6 rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-4">
+              <p className="text-sm font-medium text-[var(--color-bs-text)]">{displayName}</p>
+              {profile?.email && <p className="mt-1 text-xs text-[var(--color-bs-muted)]">{profile.email}</p>}
             </div>
 
             <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/40 p-4">
-                <p className="text-xs uppercase tracking-wide text-zinc-500">Име</p>
-                <p className="mt-1 text-sm text-zinc-100">{displayName}</p>
+              <div className="rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-wide text-[var(--color-bs-subtle)]">Име</p>
+                <p className="mt-1 text-sm text-[var(--color-bs-text)]">{displayName}</p>
               </div>
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/40 p-4">
-                <p className="text-xs uppercase tracking-wide text-zinc-500">Имейл</p>
-                <p className="mt-1 text-sm text-zinc-100">{profile?.email ?? "-"}</p>
+              <div className="rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-wide text-[var(--color-bs-subtle)]">Имейл</p>
+                <p className="mt-1 text-sm text-[var(--color-bs-text)]">{profile?.email ?? "-"}</p>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label htmlFor="phone" className="text-sm font-medium text-zinc-300">
+                <label htmlFor="phone" className="text-sm font-medium text-[var(--color-bs-muted)]">
                   Телефон
                 </label>
                 <input
@@ -187,7 +187,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label htmlFor="birth_date" className="text-sm font-medium text-zinc-300">
+                <label htmlFor="birth_date" className="text-sm font-medium text-[var(--color-bs-muted)]">
                   Дата на раждане
                 </label>
                 <input
@@ -202,7 +202,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label htmlFor="photo_url" className="text-sm font-medium text-zinc-300">
+                <label htmlFor="photo_url" className="text-sm font-medium text-[var(--color-bs-muted)]">
                   Снимка (URL)
                 </label>
                 <input
@@ -217,13 +217,13 @@ export default function ProfilePage() {
               </div>
 
               {errorMessage && (
-                <p className="text-sm text-red-400" role="alert">
+                <p className="text-sm text-rose-200" role="alert">
                   {errorMessage}
                 </p>
               )}
 
               {successMessage && (
-                <p className="text-sm text-emerald-400" role="status">
+                <p className="text-sm text-emerald-200" role="status">
                   {successMessage}
                 </p>
               )}
@@ -232,20 +232,23 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50"
+                  className="bs-btn-primary px-4 py-2.5 text-sm font-medium disabled:opacity-50"
                 >
                   {isSaving ? "Запазване..." : "Запази промените"}
                 </button>
               </div>
             </form>
 
-            <form onSubmit={handlePasswordSubmit} className="mt-8 flex flex-col gap-4 border-t border-zinc-700 pt-6">
+            <form
+              onSubmit={handlePasswordSubmit}
+              className="mt-8 flex flex-col gap-4 border-t border-[var(--color-bs-border-soft)] pt-6"
+            >
               <div>
-                <h2 className="text-sm font-semibold text-zinc-100">Смяна на парола</h2>
-                <p className="mt-1 text-xs text-zinc-400">Използвайте поне 8 символа за по-добра сигурност.</p>
+                <h2 className="text-sm font-semibold text-[var(--color-bs-text)]">Смяна на парола</h2>
+                <p className="mt-1 text-xs text-[var(--color-bs-muted)]">Използвайте поне 8 символа за по-добра сигурност.</p>
               </div>
               <div>
-                <label htmlFor="new_password" className="text-sm font-medium text-zinc-300">
+                <label htmlFor="new_password" className="text-sm font-medium text-[var(--color-bs-muted)]">
                   Нова парола
                 </label>
                 <div className="relative">
@@ -262,7 +265,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setShowNewPassword((current) => !current)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-zinc-300 hover:text-zinc-100"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--color-bs-muted)] transition-colors hover:text-[var(--color-bs-text)]"
                     aria-label={showNewPassword ? "Скрий новата парола" : "Покажи новата парола"}
                     disabled={isChangingPassword}
                   >
@@ -272,7 +275,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label htmlFor="confirm_password" className="text-sm font-medium text-zinc-300">
+                <label htmlFor="confirm_password" className="text-sm font-medium text-[var(--color-bs-muted)]">
                   Потвърди парола
                 </label>
                 <div className="relative">
@@ -289,7 +292,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword((current) => !current)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-zinc-300 hover:text-zinc-100"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--color-bs-muted)] transition-colors hover:text-[var(--color-bs-text)]"
                     aria-label={showConfirmPassword ? "Скрий потвърдената парола" : "Покажи потвърдената парола"}
                     disabled={isChangingPassword}
                   >
@@ -299,7 +302,7 @@ export default function ProfilePage() {
               </div>
 
               {passwordValidationMessage && (
-                <p className="text-sm text-red-400" role="alert">
+                <p className="text-sm text-rose-200" role="alert">
                   {passwordValidationMessage}
                 </p>
               )}
@@ -308,7 +311,7 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={isChangingPassword || !isPasswordFormValid}
-                  className="rounded-lg border border-zinc-600 px-4 py-2.5 text-sm font-medium text-zinc-100 hover:bg-zinc-800 disabled:opacity-50"
+                  className="bs-btn px-4 py-2.5 text-sm font-medium disabled:opacity-50"
                 >
                   {isChangingPassword ? "Обновяване..." : "Обнови паролата"}
                 </button>

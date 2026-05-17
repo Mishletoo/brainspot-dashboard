@@ -6,7 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
 const inputClassName =
-  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200";
+  "bs-input mt-1 w-full px-3 py-2 text-sm";
 
 type Client = {
   id: string;
@@ -110,7 +110,7 @@ export default function EditClientPage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-2xl">
-        <p className="text-sm text-zinc-600">Зареждане на клиент...</p>
+        <p className="text-sm text-[var(--color-bs-muted)]">Зареждане на клиент...</p>
       </div>
     );
   }
@@ -118,8 +118,10 @@ export default function EditClientPage() {
   if (errorMessage && !client) {
     return (
       <div className="mx-auto w-full max-w-2xl">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{errorMessage}</div>
-        <Link href="/clients" className="mt-4 inline-block text-sm text-zinc-600 hover:text-zinc-900">
+        <div className="rounded-xl border border-rose-300/35 bg-[rgba(255,110,140,0.1)] p-6 text-sm text-rose-300">
+          {errorMessage}
+        </div>
+        <Link href="/clients" className="mt-4 inline-block text-sm text-[var(--color-bs-muted)] hover:text-[var(--color-bs-text)]">
           ← Назад към клиентите
         </Link>
       </div>
@@ -131,21 +133,21 @@ export default function EditClientPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div className="mx-auto w-full max-w-2xl text-[var(--color-bs-text)]">
       <div className="mb-6">
-        <Link href={`/clients/${id}`} className="mb-2 inline-block text-sm text-zinc-500 hover:text-zinc-700">
+        <Link href={`/clients/${id}`} className="mb-2 inline-block text-sm text-[var(--color-bs-muted)] hover:text-[var(--color-bs-text)]">
           ← Назад към клиента
         </Link>
-        <h1 className="text-2xl font-semibold text-zinc-900">Редакция на клиент</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Редакция на клиент</h1>
+        <p className="mt-1 text-sm text-[var(--color-bs-muted)]">
           Промени данните за бранда, фирмата и контактните детайли на клиента.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <form onSubmit={handleSubmit} className="bs-surface-card rounded-xl p-6">
         <div className="space-y-4">
           <div>
-            <label htmlFor="brand" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="brand" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Бранд
             </label>
             <input
@@ -158,7 +160,7 @@ export default function EditClientPage() {
           </div>
 
           <div>
-            <label htmlFor="name" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="name" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Фирма
             </label>
             <input
@@ -172,7 +174,7 @@ export default function EditClientPage() {
           </div>
 
           <div>
-            <label htmlFor="contact_person" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="contact_person" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Контактно лице
             </label>
             <input
@@ -185,7 +187,7 @@ export default function EditClientPage() {
           </div>
 
           <div>
-            <label htmlFor="email" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="email" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Имейл
             </label>
             <input
@@ -198,7 +200,7 @@ export default function EditClientPage() {
           </div>
 
           <div>
-            <label htmlFor="phone" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="phone" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Телефон
             </label>
             <input
@@ -211,7 +213,7 @@ export default function EditClientPage() {
           </div>
 
           <div>
-            <label htmlFor="notes" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="notes" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Бележки
             </label>
             <textarea
@@ -224,21 +226,21 @@ export default function EditClientPage() {
           </div>
         </div>
 
-        {errorMessage && client && <p className="mt-4 text-sm text-red-600">{errorMessage}</p>}
+        {errorMessage && client && <p className="mt-4 text-sm text-rose-300">{errorMessage}</p>}
 
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={handleCancel}
             disabled={isSaving}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="bs-btn px-4 py-2 text-sm font-medium"
           >
             Отказ
           </button>
           <button
             type="submit"
             disabled={isSaving}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className="bs-btn-primary px-4 py-2 text-sm font-medium"
           >
             {isSaving ? "Запазване..." : "Запази промените"}
           </button>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 const inputClassName =
-  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200";
+  "bs-input mt-1 w-full px-3 py-2 text-sm";
 
 export default function AddEmployeePage() {
   const router = useRouter();
@@ -66,72 +66,72 @@ export default function AddEmployeePage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-4xl text-[var(--color-bs-text)]">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-zinc-900">Добавяне на служител</h1>
-        <p className="mt-1 text-sm text-zinc-500">Попълнете данните за служителя.</p>
+        <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Добавяне на служител</h1>
+        <p className="mt-1 text-sm text-[var(--color-bs-muted)]">Попълнете данните за служителя.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <form onSubmit={handleSubmit} className="bs-surface-card rounded-xl p-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label htmlFor="first_name" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="first_name" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Име
             </label>
             <input id="first_name" name="first_name" type="text" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="last_name" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="last_name" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Фамилия
             </label>
             <input id="last_name" name="last_name" type="text" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="position" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="position" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Позиция
             </label>
             <input id="position" name="position" type="text" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="department" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="department" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Отдел
             </label>
             <input id="department" name="department" type="text" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="email" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="email" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Имейл
             </label>
             <input id="email" name="email" type="email" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="phone" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="phone" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Телефон
             </label>
             <input id="phone" name="phone" type="tel" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="birth_date" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="birth_date" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Дата на раждане
             </label>
             <input id="birth_date" name="birth_date" type="date" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="photo_url" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="photo_url" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Снимка (URL)
             </label>
             <input id="photo_url" name="photo_url" type="url" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="hours_per_day" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="hours_per_day" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Часове на ден
             </label>
             <input
@@ -145,11 +145,11 @@ export default function AddEmployeePage() {
           </div>
 
           <div>
-            <label htmlFor="gross_salary" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="gross_salary" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Брутна заплата
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-bs-subtle)]">
                 €
               </span>
               <input
@@ -164,11 +164,11 @@ export default function AddEmployeePage() {
           </div>
 
           <div>
-            <label htmlFor="net_salary" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="net_salary" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Нетна заплата
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-bs-subtle)]">
                 €
               </span>
               <input
@@ -183,11 +183,11 @@ export default function AddEmployeePage() {
           </div>
 
           <div>
-            <label htmlFor="bonus" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="bonus" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Бонус
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-bs-subtle)]">
                 €
               </span>
               <input
@@ -202,11 +202,11 @@ export default function AddEmployeePage() {
           </div>
 
           <div>
-            <label htmlFor="vouchers" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="vouchers" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Ваучери
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-bs-subtle)]">
                 €
               </span>
               <input
@@ -221,11 +221,11 @@ export default function AddEmployeePage() {
           </div>
 
           <div>
-            <label htmlFor="employer_contributions" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="employer_contributions" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Осигуровки от работодател
             </label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-bs-subtle)]">
                 €
               </span>
               <input
@@ -240,7 +240,7 @@ export default function AddEmployeePage() {
           </div>
 
           <div>
-            <label htmlFor="monthly_hours" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="monthly_hours" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Месечни часове
             </label>
             <input
@@ -254,21 +254,21 @@ export default function AddEmployeePage() {
           </div>
         </div>
 
-        {errorMessage && <p className="mt-4 text-sm text-red-600">{errorMessage}</p>}
+        {errorMessage && <p className="mt-4 text-sm text-rose-300">{errorMessage}</p>}
 
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={handleCancel}
             disabled={isSaving}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="bs-btn px-4 py-2 text-sm font-medium"
           >
             Отказ
           </button>
           <button
             type="submit"
             disabled={isSaving}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className="bs-btn-primary px-4 py-2 text-sm font-medium"
           >
             {isSaving ? "Запазване..." : "Запази служителя"}
           </button>

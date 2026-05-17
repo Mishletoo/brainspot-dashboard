@@ -61,26 +61,28 @@ export default function ContractsPage() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 text-[var(--color-bs-text)]">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Договори</h1>
-          <p className="text-sm text-zinc-500">Следете срокове и напомняния по договорите.</p>
+          <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Договори</h1>
+          <p className="text-sm text-[var(--color-bs-muted)]">Следете срокове и напомняния по договорите.</p>
         </div>
         <Link
           href="/contracts/add"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+          className="bs-btn-primary px-4 py-2 text-sm font-medium"
         >
           Добави договор
         </Link>
       </div>
 
       {isLoading && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Зареждане на договори...</div>
+        <div className="bs-surface-card rounded-xl p-6 text-sm text-[var(--color-bs-muted)]">Зареждане на договори...</div>
       )}
 
       {!isLoading && errorMessage && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{errorMessage}</div>
+        <div className="rounded-xl border border-rose-300/35 bg-[rgba(255,110,140,0.1)] p-6 text-sm text-rose-300">
+          {errorMessage}
+        </div>
       )}
 
       {!isLoading && !errorMessage && contracts.length === 0 && (
@@ -89,13 +91,14 @@ export default function ContractsPage() {
           description="Добавете първия договор, за да следите срокове и подновявания."
           actionHref="/contracts/add"
           actionLabel="Добави договор"
+          variant="dark"
         />
       )}
 
       {!isLoading && !errorMessage && contracts.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <div className="bs-surface-card bs-scroll-fade overflow-x-auto rounded-xl">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
+            <thead className="border-b border-[var(--color-bs-border-soft)] bg-white/[0.03] text-[var(--color-bs-muted)]">
               <tr>
                 <th className="px-4 py-3 font-medium">Клиент</th>
                 <th className="px-4 py-3 font-medium">Договор</th>
@@ -109,13 +112,13 @@ export default function ContractsPage() {
                 <tr
                   key={contract.id}
                   onClick={() => router.push(`/contracts/${contract.id}`)}
-                  className="cursor-pointer border-b border-zinc-100 transition-colors hover:bg-zinc-50 last:border-b-0"
+                  className="cursor-pointer border-b border-[var(--color-bs-border-soft)] transition-colors hover:bg-white/[0.04] last:border-b-0"
                 >
-                  <td className="px-4 py-3 text-zinc-900">{contract.client?.name || "-"}</td>
-                  <td className="px-4 py-3 text-zinc-900">{contract.contract_name}</td>
-                  <td className="px-4 py-3 text-zinc-700">{formatDate(contract.start_date)}</td>
-                  <td className="px-4 py-3 text-zinc-700">{formatDate(contract.end_date)}</td>
-                  <td className="px-4 py-3 text-zinc-700">{contract.reminder_days ?? "-"}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-text)]">{contract.client?.name || "-"}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-text)]">{contract.contract_name}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatDate(contract.start_date)}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatDate(contract.end_date)}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-muted)]">{contract.reminder_days ?? "-"}</td>
                 </tr>
               ))}
             </tbody>

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 const inputClassName =
-  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200";
+  "bs-input mt-1 w-full px-3 py-2 text-sm";
 
 type Service = {
   id: string;
@@ -107,16 +107,16 @@ export default function AddClientServicePage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div className="mx-auto w-full max-w-2xl text-[var(--color-bs-text)]">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-zinc-900">Свързване на услуга</h1>
-        <p className="mt-1 text-sm text-zinc-500">Изберете услуга и ценообразуване за този клиент.</p>
+        <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Свързване на услуга</h1>
+        <p className="mt-1 text-sm text-[var(--color-bs-muted)]">Изберете услуга и ценообразуване за този клиент.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <form onSubmit={handleSubmit} className="bs-surface-card rounded-xl p-6">
         <div className="space-y-4">
           <div>
-            <label htmlFor="service_id" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="service_id" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Услуга
             </label>
             <select id="service_id" name="service_id" required className={inputClassName} disabled={isLoadingServices}>
@@ -130,7 +130,7 @@ export default function AddClientServicePage() {
           </div>
 
           <div>
-            <label htmlFor="pricing_type" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="pricing_type" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Тип ценообразуване
             </label>
             <select id="pricing_type" name="pricing_type" required className={inputClassName}>
@@ -141,21 +141,21 @@ export default function AddClientServicePage() {
           </div>
 
           <div>
-            <label htmlFor="fixed_price" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="fixed_price" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Фиксирана цена
             </label>
             <input id="fixed_price" name="fixed_price" type="number" step="0.01" min="0" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="monthly_price" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="monthly_price" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Месечна цена
             </label>
             <input id="monthly_price" name="monthly_price" type="number" step="0.01" min="0" className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="percentage_rate" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="percentage_rate" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Процент
             </label>
             <input
@@ -169,7 +169,7 @@ export default function AddClientServicePage() {
           </div>
 
           <div>
-            <label htmlFor="notes" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="notes" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Бележки
             </label>
             <textarea
@@ -182,21 +182,21 @@ export default function AddClientServicePage() {
           </div>
         </div>
 
-        {errorMessage && <p className="mt-4 text-sm text-red-600">{errorMessage}</p>}
+        {errorMessage && <p className="mt-4 text-sm text-rose-300">{errorMessage}</p>}
 
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={handleCancel}
             disabled={isSaving}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="bs-btn px-4 py-2 text-sm font-medium"
           >
             Отказ
           </button>
           <button
             type="submit"
             disabled={isSaving || isLoadingServices}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className="bs-btn-primary px-4 py-2 text-sm font-medium"
           >
             {isSaving ? "Запазване..." : "Запази"}
           </button>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 const inputClassName =
-  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200";
+  "bs-input mt-1 w-full px-3 py-2 text-sm";
 
 export default function AddServicePage() {
   const router = useRouter();
@@ -85,23 +85,23 @@ export default function AddServicePage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div className="mx-auto w-full max-w-2xl text-[var(--color-bs-text)]">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-zinc-900">Добавяне на услуга</h1>
-        <p className="mt-1 text-sm text-zinc-500">Създайте нова услуга, като попълните формата.</p>
+        <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Добавяне на услуга</h1>
+        <p className="mt-1 text-sm text-[var(--color-bs-muted)]">Създайте нова услуга, като попълните формата.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <form onSubmit={handleSubmit} className="bs-surface-card rounded-xl p-6">
         <div className="space-y-4">
           <div>
-            <label htmlFor="name" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="name" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Име
             </label>
             <input id="name" name="name" type="text" required className={inputClassName} />
           </div>
 
           <div>
-            <label htmlFor="description" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="description" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Описание
             </label>
             <textarea
@@ -114,7 +114,7 @@ export default function AddServicePage() {
           </div>
 
           <div>
-            <label htmlFor="pricing_type" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="pricing_type" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Тип ценообразуване
             </label>
             <select id="pricing_type" name="pricing_type" required className={inputClassName} defaultValue="one_time">
@@ -125,7 +125,7 @@ export default function AddServicePage() {
           </div>
 
           <div>
-            <label htmlFor="percentage_value" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="percentage_value" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Процентна стойност
             </label>
             <input
@@ -141,21 +141,21 @@ export default function AddServicePage() {
           </div>
         </div>
 
-        {errorMessage && <p className="mt-4 text-sm text-red-600">{errorMessage}</p>}
+        {errorMessage && <p className="mt-4 text-sm text-rose-300">{errorMessage}</p>}
 
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={handleCancel}
             disabled={isSaving}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="bs-btn px-4 py-2 text-sm font-medium"
           >
             Отказ
           </button>
           <button
             type="submit"
             disabled={isSaving}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className="bs-btn-primary px-4 py-2 text-sm font-medium"
           >
             {isSaving ? "Запазване..." : "Запази услугата"}
           </button>

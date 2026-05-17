@@ -29,20 +29,20 @@ function getLinkedAccountStatus(employee: Employee) {
   if (!employee.auth_user_id) {
     return {
       label: "Несвързан",
-      className: "border-zinc-200 bg-zinc-50 text-zinc-700",
+      className: "bs-status-neutral",
     };
   }
 
   if (employee.is_active === false) {
     return {
       label: "Свързан (неактивен)",
-      className: "border-red-200 bg-red-50 text-red-700",
+      className: "bs-status-danger",
     };
   }
 
   return {
     label: "Свързан (активен)",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    className: "bs-status-success",
   };
 }
 
@@ -77,26 +77,28 @@ export default function EmployeesPage() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 text-[var(--color-bs-text)]">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Служители</h1>
-          <p className="text-sm text-zinc-500">Управлявайте служителите на едно място.</p>
+          <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Служители</h1>
+          <p className="text-sm text-[var(--color-bs-muted)]">Управлявайте служителите на едно място.</p>
         </div>
         <Link
           href="/employees/add"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+          className="bs-btn-primary px-4 py-2 text-sm font-medium"
         >
           Добави служител
         </Link>
       </div>
 
       {isLoading && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Зареждане на служители...</div>
+        <div className="bs-surface-card rounded-xl p-6 text-sm text-[var(--color-bs-muted)]">Зареждане на служители...</div>
       )}
 
       {!isLoading && errorMessage && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{errorMessage}</div>
+        <div className="rounded-xl border border-rose-300/35 bg-[rgba(255,110,140,0.1)] p-6 text-sm text-rose-300">
+          {errorMessage}
+        </div>
       )}
 
       {!isLoading && !errorMessage && employees.length === 0 && (
@@ -105,13 +107,14 @@ export default function EmployeesPage() {
           description="Добавете екипа си, за да управлявате контакти и ангажименти."
           actionHref="/employees/add"
           actionLabel="Добави служител"
+          variant="dark"
         />
       )}
 
       {!isLoading && !errorMessage && employees.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <div className="bs-surface-card bs-scroll-fade overflow-x-auto rounded-xl">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
+            <thead className="border-b border-[var(--color-bs-border-soft)] bg-white/[0.03] text-[var(--color-bs-muted)]">
               <tr>
                 <th className="px-4 py-3 font-medium">Име</th>
                 <th className="px-4 py-3 font-medium">Позиция</th>
@@ -136,14 +139,14 @@ export default function EmployeesPage() {
                   <tr
                     key={employee.id}
                     onClick={() => router.push(`/employees/${employee.id}`)}
-                    className="cursor-pointer border-b border-zinc-100 transition-colors hover:bg-zinc-50 last:border-b-0"
+                    className="cursor-pointer border-b border-[var(--color-bs-border-soft)] transition-colors hover:bg-white/[0.04] last:border-b-0"
                   >
-                    <td className="px-4 py-3 text-zinc-900">{fullName}</td>
-                    <td className="px-4 py-3 text-zinc-700">{employee.position || "-"}</td>
-                    <td className="px-4 py-3 text-zinc-700">{employee.department || "-"}</td>
-                    <td className="px-4 py-3 text-zinc-700">{formatCurrency(employee.net_salary)}</td>
-                    <td className="px-4 py-3 text-zinc-700">{formatCurrency(employee.bonus)}</td>
-                    <td className="px-4 py-3 text-zinc-700">{formatCurrency(employee.monthly_cost)}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-text)]">{fullName}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{employee.position || "-"}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{employee.department || "-"}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatCurrency(employee.net_salary)}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatCurrency(employee.bonus)}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatCurrency(employee.monthly_cost)}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${accountStatus.className}`}
@@ -151,8 +154,8 @@ export default function EmployeesPage() {
                         {accountStatus.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-zinc-700">{employee.email || "-"}</td>
-                    <td className="px-4 py-3 text-zinc-700">{employee.phone || "-"}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{employee.email || "-"}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{employee.phone || "-"}</td>
                   </tr>
                 );
               })}

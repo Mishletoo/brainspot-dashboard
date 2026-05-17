@@ -95,7 +95,7 @@ export default function ContractDetailsPage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <p className="text-sm text-zinc-600">Зареждане на договор...</p>
+        <p className="text-sm text-[var(--color-bs-muted)]">Зареждане на договор...</p>
       </div>
     );
   }
@@ -103,10 +103,10 @@ export default function ContractDetailsPage() {
   if (errorMessage || !contract) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+        <div className="rounded-xl border border-rose-300/35 bg-[rgba(255,110,140,0.1)] p-6 text-sm text-rose-300">
           {errorMessage || "Договорът не е намерен."}
         </div>
-        <Link href="/contracts" className="mt-4 inline-block text-sm text-zinc-600 hover:text-zinc-900">
+        <Link href="/contracts" className="mt-4 inline-block text-sm text-[var(--color-bs-muted)] hover:text-[var(--color-bs-text)]">
           ← Назад към договорите
         </Link>
       </div>
@@ -114,23 +114,23 @@ export default function ContractDetailsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-4xl text-[var(--color-bs-text)]">
       <div className="mb-6">
-        <Link href="/contracts" className="mb-2 inline-block text-sm text-zinc-500 hover:text-zinc-700">
+        <Link href="/contracts" className="mb-2 inline-block text-sm text-[var(--color-bs-muted)] hover:text-[var(--color-bs-text)]">
           ← Назад към договорите
         </Link>
-        <h1 className="text-2xl font-semibold text-zinc-900">{contract.contract_name}</h1>
+        <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">{contract.contract_name}</h1>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <div className="border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Детайли за договора</h2>
+      <div className="bs-surface-card rounded-xl">
+        <div className="border-b border-[var(--color-bs-border-soft)] px-4 py-3">
+          <h2 className="text-sm font-medium text-[var(--color-bs-muted)]">Детайли за договора</h2>
         </div>
-        <dl className="divide-y divide-zinc-100">
+        <dl className="divide-y divide-[var(--color-bs-border-soft)]">
           <DetailRow
             label="Клиент"
             value={contract.client ? (
-              <Link href={`/clients/${contract.client.id}`} className="text-zinc-900 underline-offset-2 hover:underline">
+              <Link href={`/clients/${contract.client.id}`} className="text-[var(--color-bs-text)] underline-offset-2 hover:underline">
                 {contract.client.name}
               </Link>
             ) : (
@@ -147,7 +147,7 @@ export default function ContractDetailsPage() {
                     href={contract.contract_file}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-zinc-900 underline-offset-2 hover:underline"
+                    className="text-[var(--color-bs-text)] underline-offset-2 hover:underline"
                   >
                     Отвори файла
                   </a>
@@ -174,8 +174,8 @@ export default function ContractDetailsPage() {
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex justify-between gap-4 px-4 py-3">
-      <dt className="text-sm text-zinc-500">{label}</dt>
-      <dd className="text-right text-sm text-zinc-900">{value}</dd>
+      <dt className="text-sm text-[var(--color-bs-muted)]">{label}</dt>
+      <dd className="text-right text-sm text-[var(--color-bs-text)]">{value}</dd>
     </div>
   );
 }

@@ -31,11 +31,11 @@ function formatAmount(value: number | null) {
 }
 
 function getStatusBadgeClass(status: InvoiceStatus) {
-  if (status === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (status === "overdue") return "border-red-200 bg-red-50 text-red-700";
-  if (status === "sent") return "border-blue-200 bg-blue-50 text-blue-700";
-  if (status === "waiting") return "border-amber-200 bg-amber-50 text-amber-700";
-  return "border-zinc-200 bg-zinc-100 text-zinc-700";
+  if (status === "paid") return "bs-status-success";
+  if (status === "overdue") return "bs-status-danger";
+  if (status === "sent") return "bs-status-info";
+  if (status === "waiting") return "bs-status-warning";
+  return "bs-status-neutral";
 }
 
 function getStatusLabel(status: InvoiceStatus) {
@@ -107,7 +107,7 @@ export default function InvoiceDetailsPage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <p className="text-sm text-zinc-600">Зареждане на фактура...</p>
+        <p className="text-sm text-[var(--color-bs-muted)]">Зареждане на фактура...</p>
       </div>
     );
   }
@@ -115,10 +115,10 @@ export default function InvoiceDetailsPage() {
   if (errorMessage || !invoice) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+        <div className="rounded-xl border border-rose-300/35 bg-[rgba(255,110,140,0.1)] p-6 text-sm text-rose-300">
           {errorMessage || "Фактурата не е намерена."}
         </div>
-        <Link href="/invoices" className="mt-4 inline-block text-sm text-zinc-600 hover:text-zinc-900">
+        <Link href="/invoices" className="mt-4 inline-block text-sm text-[var(--color-bs-muted)] hover:text-[var(--color-bs-text)]">
           ← Назад към фактурите
         </Link>
       </div>
@@ -126,24 +126,27 @@ export default function InvoiceDetailsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-4xl text-[var(--color-bs-text)]">
       <div className="mb-6">
-        <Link href="/invoices" className="mb-2 inline-block text-sm text-zinc-500 hover:text-zinc-700">
+        <Link href="/invoices" className="mb-2 inline-block text-sm text-[var(--color-bs-muted)] hover:text-[var(--color-bs-text)]">
           ← Назад към фактурите
         </Link>
-        <h1 className="text-2xl font-semibold text-zinc-900">{invoice.invoice_number}</h1>
+        <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">{invoice.invoice_number}</h1>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <div className="border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Детайли за фактурата</h2>
+      <div className="bs-surface-card rounded-xl">
+        <div className="border-b border-[var(--color-bs-border-soft)] px-4 py-3">
+          <h2 className="text-sm font-medium text-[var(--color-bs-muted)]">Детайли за фактурата</h2>
         </div>
-        <dl className="divide-y divide-zinc-100">
+        <dl className="divide-y divide-[var(--color-bs-border-soft)]">
           <DetailRow
             label="Клиент"
             value={
               invoice.client ? (
-                <Link href={`/clients/${invoice.client.id}`} className="text-zinc-900 underline-offset-2 hover:underline">
+                <Link
+                  href={`/clients/${invoice.client.id}`}
+                  className="text-[var(--color-bs-text)] underline-offset-2 hover:underline"
+                >
                   {invoice.client.name}
                 </Link>
               ) : (
@@ -175,8 +178,8 @@ export default function InvoiceDetailsPage() {
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex justify-between gap-4 px-4 py-3">
-      <dt className="text-sm text-zinc-500">{label}</dt>
-      <dd className="text-right text-sm text-zinc-900">{value}</dd>
+      <dt className="text-sm text-[var(--color-bs-muted)]">{label}</dt>
+      <dd className="text-right text-sm text-[var(--color-bs-text)]">{value}</dd>
     </div>
   );
 }

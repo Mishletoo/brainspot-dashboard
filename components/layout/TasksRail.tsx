@@ -83,12 +83,19 @@ export default function TasksRail() {
 
   return (
     <aside
-      className={`sticky top-0 z-20 hidden h-screen border-l border-zinc-200 bg-white lg:flex ${
+      className={`sticky top-0 z-20 hidden h-screen lg:flex ${
         isCollapsed ? "w-14 min-w-14 max-w-14" : "shrink-0"
       }`}
       style={railStyle}
       aria-label="Панел със задачи"
     >
+      <div
+        className={`bs-surface-glass relative h-full w-full border-l border-[var(--color-bs-border-soft)] ${
+          isCollapsed
+            ? "rounded-l-xl"
+            : "rounded-l-[18px] shadow-[-10px_0_28px_-20px_rgba(0,0,0,0.85)]"
+        }`}
+      >
       {!isCollapsed && (
         <div
           role="separator"
@@ -104,27 +111,31 @@ export default function TasksRail() {
           <button
             type="button"
             onClick={() => setIsCollapsed(false)}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+            className="bs-btn-premium h-8 w-8 px-0 text-xs"
             aria-label="Покажи задачите"
             title="Покажи задачите"
           >
             ▶
           </button>
-          <span className="rotate-180 text-[11px] uppercase tracking-wide text-zinc-400 [writing-mode:vertical-rl]">
+          <span className="rotate-180 text-[11px] uppercase tracking-[0.11em] text-[var(--color-bs-subtle)] [writing-mode:vertical-rl]">
             Задачи
           </span>
         </div>
       ) : (
         <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
-          <div className="flex items-center justify-between border-b border-zinc-200 px-3 py-2">
+          <div className="flex items-center justify-between border-b border-[var(--color-bs-border-soft)] px-4 py-3">
             <div>
-              <p className="text-sm font-semibold text-zinc-900">Лични задачи</p>
-              <p className="text-[11px] text-zinc-500">Продуктивен помощник</p>
+              <p className="text-sm font-semibold tracking-tight text-[var(--color-bs-text)]">
+                Лични задачи
+              </p>
+              <p className="text-[11px] text-[var(--color-bs-subtle)]">
+                Продуктивен помощник
+              </p>
             </div>
             <button
               type="button"
               onClick={() => setIsCollapsed(true)}
-              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+              className="bs-btn-premium h-8 w-8 px-0 text-xs"
               aria-label="Скрий задачите"
               title="Скрий задачите"
             >
@@ -132,11 +143,12 @@ export default function TasksRail() {
             </button>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3">
+          <div className="bs-scroll-fade min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 pb-3 pt-2.5">
             <PersonalTasksModule mode="rail" />
           </div>
         </div>
       )}
+      </div>
     </aside>
   );
 }

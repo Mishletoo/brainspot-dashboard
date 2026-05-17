@@ -60,11 +60,11 @@ function getPricingTypeLabel(value: "one_time" | "monthly" | "percentage") {
 }
 
 function getInvoiceStatusBadgeClass(status: ClientInvoice["status"]) {
-  if (status === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (status === "overdue") return "border-red-200 bg-red-50 text-red-700";
-  if (status === "sent") return "border-blue-200 bg-blue-50 text-blue-700";
-  if (status === "waiting") return "border-amber-200 bg-amber-50 text-amber-700";
-  return "border-zinc-200 bg-zinc-100 text-zinc-700";
+  if (status === "paid") return "bs-status-success";
+  if (status === "overdue") return "bs-status-danger";
+  if (status === "sent") return "bs-status-info";
+  if (status === "waiting") return "bs-status-warning";
+  return "bs-status-neutral";
 }
 
 function getInvoiceStatusLabel(status: ClientInvoice["status"]) {
@@ -220,7 +220,7 @@ export default function ClientDetailsPage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <p className="text-sm text-zinc-600">Зареждане на клиент...</p>
+        <p className="text-sm text-[var(--color-bs-muted)]">Зареждане на клиент...</p>
       </div>
     );
   }
@@ -228,8 +228,10 @@ export default function ClientDetailsPage() {
   if (errorMessage || !client) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{errorMessage || "Клиентът не е намерен."}</div>
-        <Link href="/clients" className="mt-4 inline-block text-sm text-zinc-600 hover:text-zinc-900">
+        <div className="rounded-xl border border-rose-300/35 bg-[rgba(255,110,140,0.1)] p-6 text-sm text-rose-300">
+          {errorMessage || "Клиентът не е намерен."}
+        </div>
+        <Link href="/clients" className="mt-4 inline-block text-sm text-[var(--color-bs-muted)] hover:text-[var(--color-bs-text)]">
           ← Назад към клиентите
         </Link>
       </div>
@@ -237,21 +239,21 @@ export default function ClientDetailsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-4xl text-[var(--color-bs-text)]">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <Link href="/clients" className="mb-2 inline-block text-sm text-zinc-500 hover:text-zinc-700">
+          <Link href="/clients" className="mb-2 inline-block text-sm text-[var(--color-bs-muted)] hover:text-[var(--color-bs-text)]">
             ← Назад към клиентите
           </Link>
-          <h1 className="text-2xl font-semibold text-zinc-900">{client.name}</h1>
+          <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">{client.name}</h1>
         </div>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <div className="border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Детайли за клиента</h2>
+      <div className="bs-surface-card rounded-xl">
+        <div className="border-b border-[var(--color-bs-border-soft)] px-4 py-3">
+          <h2 className="text-sm font-medium text-[var(--color-bs-muted)]">Детайли за клиента</h2>
         </div>
-        <dl className="divide-y divide-zinc-100">
+        <dl className="divide-y divide-[var(--color-bs-border-soft)]">
           <DetailRow label="Име" value={client.name} />
           <DetailRow label="Контактно лице" value={client.contact_person} />
           <DetailRow label="Имейл" value={client.email} />
@@ -260,18 +262,20 @@ export default function ClientDetailsPage() {
         </dl>
       </div>
 
-      <div className="mt-6 rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Услуги на клиента</h2>
+      <div className="bs-surface-card mt-6 rounded-xl">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--color-bs-border-soft)] px-4 py-3">
+          <h2 className="text-sm font-medium text-[var(--color-bs-muted)]">Услуги на клиента</h2>
           <Link
             href={`/clients/${id}/add-service`}
-            className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800"
+            className="bs-btn-primary px-3 py-1.5 text-xs font-medium"
           >
             Свържи услуга
           </Link>
         </div>
         {detachErrorMessage && (
-          <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{detachErrorMessage}</div>
+          <div className="border-b border-rose-300/35 bg-[rgba(255,110,140,0.1)] px-4 py-2 text-sm text-rose-300">
+            {detachErrorMessage}
+          </div>
         )}
 
         {clientServices.length === 0 ? (
@@ -280,12 +284,12 @@ export default function ClientDetailsPage() {
             description="Свържете услуги от каталога с индивидуални цени за този клиент."
             actionHref={`/clients/${id}/add-service`}
             actionLabel="Свържи услуга"
-            variant="compact"
+            variant="compact-dark"
           />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="bs-scroll-fade overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
+              <thead className="border-b border-[var(--color-bs-border-soft)] bg-white/[0.03] text-[var(--color-bs-muted)]">
                 <tr>
                   <th className="px-4 py-3 font-medium">Услуга</th>
                   <th className="px-4 py-3 font-medium">Тип ценообразуване</th>
@@ -297,18 +301,18 @@ export default function ClientDetailsPage() {
               </thead>
               <tbody>
                 {clientServices.map((service) => (
-                  <tr key={service.id} className="border-b border-zinc-100 last:border-b-0">
-                    <td className="px-4 py-3 text-zinc-900">{service.service?.name || "-"}</td>
-                    <td className="px-4 py-3 text-zinc-700">{getPricingTypeLabel(service.pricing_type)}</td>
-                    <td className="px-4 py-3 text-zinc-700">{formatMoney(service.fixed_price)}</td>
-                    <td className="px-4 py-3 text-zinc-700">{formatMoney(service.monthly_price)}</td>
-                    <td className="px-4 py-3 text-zinc-700">{formatPercentage(service.percentage_rate)}</td>
+                  <tr key={service.id} className="border-b border-[var(--color-bs-border-soft)] last:border-b-0">
+                    <td className="px-4 py-3 text-[var(--color-bs-text)]">{service.service?.name || "-"}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{getPricingTypeLabel(service.pricing_type)}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatMoney(service.fixed_price)}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatMoney(service.monthly_price)}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatPercentage(service.percentage_rate)}</td>
                     <td className="px-4 py-3">
                       <button
                         type="button"
                         onClick={() => handleDetachService(service.id)}
                         disabled={removingClientServiceId === service.id}
-                        className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-md border border-rose-300/35 bg-[rgba(255,110,140,0.08)] px-2.5 py-1 text-xs font-medium text-rose-300 hover:bg-[rgba(255,110,140,0.14)] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {removingClientServiceId === service.id ? "Премахване..." : "Премахни"}
                       </button>
@@ -321,12 +325,12 @@ export default function ClientDetailsPage() {
         )}
       </div>
 
-      <div className="mt-6 rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Договори</h2>
+      <div className="bs-surface-card mt-6 rounded-xl">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--color-bs-border-soft)] px-4 py-3">
+          <h2 className="text-sm font-medium text-[var(--color-bs-muted)]">Договори</h2>
           <Link
             href="/contracts/add"
-            className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800"
+            className="bs-btn-primary px-3 py-1.5 text-xs font-medium"
           >
             Добави договор
           </Link>
@@ -338,12 +342,12 @@ export default function ClientDetailsPage() {
             description="Добавете договори за този клиент, за да следите срокове и напомняния."
             actionHref="/contracts/add"
             actionLabel="Добави договор"
-            variant="compact"
+            variant="compact-dark"
           />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="bs-scroll-fade overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
+              <thead className="border-b border-[var(--color-bs-border-soft)] bg-white/[0.03] text-[var(--color-bs-muted)]">
                 <tr>
                   <th className="px-4 py-3 font-medium">Договор</th>
                   <th className="px-4 py-3 font-medium">Начална дата</th>
@@ -353,15 +357,15 @@ export default function ClientDetailsPage() {
               </thead>
               <tbody>
                 {clientContracts.map((contract) => (
-                  <tr key={contract.id} className="border-b border-zinc-100 last:border-b-0">
-                    <td className="px-4 py-3 text-zinc-900">
+                  <tr key={contract.id} className="border-b border-[var(--color-bs-border-soft)] last:border-b-0">
+                    <td className="px-4 py-3 text-[var(--color-bs-text)]">
                       <Link href={`/contracts/${contract.id}`} className="hover:underline">
                         {contract.contract_name}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-zinc-700">{contract.start_date ?? "-"}</td>
-                    <td className="px-4 py-3 text-zinc-700">{contract.end_date ?? "-"}</td>
-                    <td className="px-4 py-3 text-zinc-700">{contract.reminder_days ?? "-"}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{contract.start_date ?? "-"}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{contract.end_date ?? "-"}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{contract.reminder_days ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -370,12 +374,12 @@ export default function ClientDetailsPage() {
         )}
       </div>
 
-      <div className="mt-6 rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Фактури</h2>
+      <div className="bs-surface-card mt-6 rounded-xl">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--color-bs-border-soft)] px-4 py-3">
+          <h2 className="text-sm font-medium text-[var(--color-bs-muted)]">Фактури</h2>
           <Link
             href="/invoices/add"
-            className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800"
+            className="bs-btn-primary px-3 py-1.5 text-xs font-medium"
           >
             Добави фактура
           </Link>
@@ -387,12 +391,12 @@ export default function ClientDetailsPage() {
             description="Създайте фактури за този клиент, за да следите суми и плащания."
             actionHref="/invoices/add"
             actionLabel="Добави фактура"
-            variant="compact"
+            variant="compact-dark"
           />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="bs-scroll-fade overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
+              <thead className="border-b border-[var(--color-bs-border-soft)] bg-white/[0.03] text-[var(--color-bs-muted)]">
                 <tr>
                   <th className="px-4 py-3 font-medium">Номер на фактура</th>
                   <th className="px-4 py-3 font-medium">Сума</th>
@@ -403,15 +407,15 @@ export default function ClientDetailsPage() {
               </thead>
               <tbody>
                 {clientInvoices.map((invoice) => (
-                  <tr key={invoice.id} className="border-b border-zinc-100 last:border-b-0">
-                    <td className="px-4 py-3 text-zinc-900">
+                  <tr key={invoice.id} className="border-b border-[var(--color-bs-border-soft)] last:border-b-0">
+                    <td className="px-4 py-3 text-[var(--color-bs-text)]">
                       <Link href={`/invoices/${invoice.id}`} className="hover:underline">
                         {invoice.invoice_number}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-zinc-700">{formatMoney(invoice.amount)}</td>
-                    <td className="px-4 py-3 text-zinc-700">{invoice.issue_date ?? "-"}</td>
-                    <td className="px-4 py-3 text-zinc-700">{invoice.due_date ?? "-"}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatMoney(invoice.amount)}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{invoice.issue_date ?? "-"}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{invoice.due_date ?? "-"}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getInvoiceStatusBadgeClass(invoice.status)}`}
@@ -433,8 +437,8 @@ export default function ClientDetailsPage() {
 function DetailRow({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="flex justify-between gap-4 px-4 py-3">
-      <dt className="text-sm text-zinc-500">{label}</dt>
-      <dd className="text-right text-sm text-zinc-900">{value ?? "-"}</dd>
+      <dt className="text-sm text-[var(--color-bs-muted)]">{label}</dt>
+      <dd className="text-right text-sm text-[var(--color-bs-text)]">{value ?? "-"}</dd>
     </div>
   );
 }

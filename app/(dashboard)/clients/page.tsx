@@ -45,26 +45,28 @@ export default function ClientsPage() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 text-[var(--color-bs-text)]">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Клиенти</h1>
-          <p className="text-sm text-zinc-500">Управлявайте клиентите на едно място.</p>
+          <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Клиенти</h1>
+          <p className="text-sm text-[var(--color-bs-muted)]">Управлявайте клиентите на едно място.</p>
         </div>
         <Link
           href="/clients/add"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+          className="bs-btn-primary px-4 py-2 text-sm font-medium"
         >
           Добави клиент
         </Link>
       </div>
 
       {isLoading && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Зареждане на клиенти...</div>
+        <div className="bs-surface-card rounded-xl p-6 text-sm text-[var(--color-bs-muted)]">Зареждане на клиенти...</div>
       )}
 
       {!isLoading && errorMessage && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{errorMessage}</div>
+        <div className="rounded-xl border border-rose-300/35 bg-[rgba(255,110,140,0.1)] p-6 text-sm text-rose-300">
+          {errorMessage}
+        </div>
       )}
 
       {!isLoading && !errorMessage && clients.length === 0 && (
@@ -73,13 +75,14 @@ export default function ClientsPage() {
           description="Започнете, като добавите първия си клиент."
           actionHref="/clients/add"
           actionLabel="Добави клиент"
+          variant="dark"
         />
       )}
 
       {!isLoading && !errorMessage && clients.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <div className="bs-surface-card bs-scroll-fade overflow-x-auto rounded-xl">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
+            <thead className="border-b border-[var(--color-bs-border-soft)] bg-white/[0.03] text-[var(--color-bs-muted)]">
               <tr>
                 <th className="px-4 py-3 font-medium">Име</th>
                 <th className="px-4 py-3 font-medium">Контактно лице</th>
@@ -92,12 +95,12 @@ export default function ClientsPage() {
                 <tr
                   key={client.id}
                   onClick={() => router.push(`/clients/${client.id}`)}
-                  className="cursor-pointer border-b border-zinc-100 transition-colors hover:bg-zinc-50 last:border-b-0"
+                  className="cursor-pointer border-b border-[var(--color-bs-border-soft)] transition-colors hover:bg-white/[0.04] last:border-b-0"
                 >
-                  <td className="px-4 py-3 text-zinc-900">{client.name}</td>
-                  <td className="px-4 py-3 text-zinc-700">{client.contact_person || "-"}</td>
-                  <td className="px-4 py-3 text-zinc-700">{client.email || "-"}</td>
-                  <td className="px-4 py-3 text-zinc-700">{client.phone || "-"}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-text)]">{client.name}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-muted)]">{client.contact_person || "-"}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-muted)]">{client.email || "-"}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-muted)]">{client.phone || "-"}</td>
                 </tr>
               ))}
             </tbody>

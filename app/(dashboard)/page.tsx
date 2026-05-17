@@ -97,14 +97,14 @@ function formatDate(value: string) {
 
 function getStatusClasses(daysLeft: number) {
   if (daysLeft <= 30) {
-    return "border-red-200 bg-red-50 text-red-700";
+    return "bs-status-danger";
   }
 
   if (daysLeft <= 60) {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "bs-status-warning";
   }
 
-  return "border-zinc-200 bg-zinc-100 text-zinc-700";
+  return "bs-status-neutral";
 }
 
 function monthBounds(date = new Date()) {
@@ -553,50 +553,59 @@ export default function Home() {
 
   const monthStatusClasses =
     employeeData.monthStatus === "locked"
-      ? "border-rose-200 bg-rose-50 text-rose-700"
+      ? "bs-status-danger"
       : employeeData.monthStatus === "submitted"
-        ? "border-sky-200 bg-sky-50 text-sky-700"
-        : "border-zinc-200 bg-zinc-100 text-zinc-700";
+        ? "bs-status-info"
+        : "bs-status-neutral";
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold text-zinc-900">Табло</h1>
-        <p className="text-sm text-zinc-500">
+        <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Табло</h1>
+        <p className="text-sm text-[var(--color-bs-muted)]">
           {isEmployeeView ? "Вашият продуктивен преглед за текущия месец." : "Оперативен преглед за екипа и бизнеса."}
         </p>
       </div>
 
-      {isLoading && <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600">Зареждане...</div>}
+      {isLoading && (
+        <div className="rounded-xl border border-[var(--color-bs-border-soft)] bg-white/5 p-4 text-sm text-[var(--color-bs-muted)] shadow-[0_12px_26px_-22px_rgba(0,0,0,0.9)]">
+          Зареждане...
+        </div>
+      )}
 
       {!isLoading && errorMessage && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{errorMessage}</div>
+        <div className="rounded-xl border border-rose-400/40 bg-rose-500/10 p-4 text-sm text-rose-200">{errorMessage}</div>
       )}
 
       {!isLoading && !errorMessage && isEmployeeView && (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
           <div className="flex flex-col gap-4">
-            <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-              <div className="grid grid-cols-1 divide-y divide-zinc-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <section className="bs-surface-card overflow-hidden rounded-xl">
+              <div className="grid grid-cols-1 divide-y divide-[var(--color-bs-border-soft)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                 <div className="flex flex-col gap-0.5 px-4 py-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Моите задачи</p>
-                  <p className="text-lg font-semibold tabular-nums text-zinc-900">{employeeData.myTasks}</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-bs-subtle)]">Моите задачи</p>
+                  <p className="text-lg font-semibold tabular-nums text-[var(--color-bs-text)]">{employeeData.myTasks}</p>
                 </div>
                 <div className="flex flex-col gap-0.5 px-4 py-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">В процес</p>
-                  <p className="text-lg font-semibold tabular-nums text-zinc-900">{employeeData.inProgress}</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-bs-subtle)]">В процес</p>
+                  <p className="text-lg font-semibold tabular-nums text-[var(--color-bs-text)]">{employeeData.inProgress}</p>
                 </div>
                 <div className="flex flex-col gap-0.5 px-4 py-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Завършени този месец</p>
-                  <p className="text-lg font-semibold tabular-nums text-zinc-900">{employeeData.completedThisMonth}</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-bs-subtle)]">
+                    Завършени този месец
+                  </p>
+                  <p className="text-lg font-semibold tabular-nums text-[var(--color-bs-text)]">{employeeData.completedThisMonth}</p>
                 </div>
               </div>
             </section>
 
-            <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-                <h2 className="text-sm font-medium text-zinc-700">Днешни / активни задачи</h2>
-                <Link href="/tasks" className="text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-700">
+            <section className="bs-surface-card overflow-hidden rounded-xl">
+              <div className="flex items-center justify-between border-b border-[var(--color-bs-border-soft)] bg-white/5 px-4 py-3">
+                <h2 className="text-sm font-medium text-[var(--color-bs-text)]">Днешни / активни задачи</h2>
+                <Link
+                  href="/tasks"
+                  className="text-xs font-medium text-[var(--color-bs-muted)] transition-colors hover:text-[var(--color-bs-text)]"
+                >
                   Моите задачи
                 </Link>
               </div>
@@ -607,7 +616,7 @@ export default function Home() {
                   description="След добавяне на записи в отчета тук ще се появят активните задачи."
                   actionHref="/work-reports"
                   actionLabel="Добави отчет"
-                  variant="compact"
+                  variant="compact-dark"
                 />
               ) : (
                 <div className="max-h-[420px] overflow-y-auto px-3 py-3">
@@ -615,30 +624,32 @@ export default function Home() {
                     {employeeData.tasks.slice(0, 12).map((task) => (
                       <article
                         key={task.id}
-                        className="grid gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700 sm:grid-cols-[minmax(0,1fr)_auto]"
+                        className="grid gap-2 rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-3 text-sm text-[var(--color-bs-muted)] sm:grid-cols-[minmax(0,1fr)_auto]"
                       >
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-zinc-900">{task.taskName}</p>
-                          <p className="truncate text-xs text-zinc-500">{task.clientName}</p>
+                          <p className="truncate text-sm font-semibold text-[var(--color-bs-text)]">{task.taskName}</p>
+                          <p className="truncate text-xs text-[var(--color-bs-subtle)]">{task.clientName}</p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                          <span className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-xs text-zinc-600">
+                          <span className="bs-pill px-2 py-0.5 text-xs">
                             {priorityLabel(task.priority)}
                           </span>
                           <span
                             className={`rounded-full border px-2 py-0.5 text-xs ${
                               task.isOverdue
-                                ? "border-rose-200 bg-rose-50 text-rose-700"
+                                ? "bs-status-danger"
                                 : task.status === "in_progress" || task.status === "started"
-                                  ? "border-amber-200 bg-amber-50 text-amber-700"
+                                  ? "bs-status-warning"
                                   : task.status === "done"
-                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                    : "border-zinc-200 bg-zinc-100 text-zinc-700"
+                                    ? "bs-status-success"
+                                    : "bs-status-neutral"
                             }`}
                           >
                             {statusLabel(task.status, task.isOverdue)}
                           </span>
-                          <span className="text-xs text-zinc-500">{formatDateRange(task.startDate, task.endDate, task.createdAt)}</span>
+                          <span className="text-xs text-[var(--color-bs-subtle)]">
+                            {formatDateRange(task.startDate, task.endDate, task.createdAt)}
+                          </span>
                         </div>
                       </article>
                     ))}
@@ -649,9 +660,9 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-              <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-                <h2 className="text-sm font-medium text-zinc-700">Статус на месечния отчет</h2>
+            <section className="bs-surface-card overflow-hidden rounded-xl">
+              <div className="border-b border-[var(--color-bs-border-soft)] bg-white/5 px-4 py-3">
+                <h2 className="text-sm font-medium text-[var(--color-bs-text)]">Статус на месечния отчет</h2>
               </div>
               <div className="flex flex-col gap-3 p-4">
                 <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${monthStatusClasses}`}>
@@ -659,27 +670,27 @@ export default function Home() {
                 </span>
                 <Link
                   href="/work-reports"
-                  className="inline-flex w-fit items-center rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                  className="bs-btn inline-flex w-fit items-center px-3 py-1.5 text-sm font-medium"
                 >
                   Отвори отчета
                 </Link>
               </div>
             </section>
 
-            <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-              <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-                <h2 className="text-sm font-medium text-zinc-700">Бързи действия</h2>
+            <section className="bs-surface-card overflow-hidden rounded-xl">
+              <div className="border-b border-[var(--color-bs-border-soft)] bg-white/5 px-4 py-3">
+                <h2 className="text-sm font-medium text-[var(--color-bs-text)]">Бързи действия</h2>
               </div>
               <div className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2 xl:grid-cols-1">
                 <Link
                   href="/work-reports"
-                  className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-center text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                  className="bs-btn-primary px-3 py-2 text-center text-sm font-medium"
                 >
                   Добави отчет
                 </Link>
                 <Link
                   href="/work-reports"
-                  className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-center text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                  className="bs-btn px-3 py-2 text-center text-sm font-medium"
                 >
                   Отчети за работа
                 </Link>
@@ -691,55 +702,61 @@ export default function Home() {
 
       {!isLoading && !errorMessage && !isEmployeeView && (
         <div className="flex flex-col gap-4">
-          <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="grid grid-cols-2 divide-x divide-y divide-zinc-100 sm:grid-cols-4 sm:divide-y-0">
+          <section className="bs-surface-card overflow-hidden rounded-xl">
+            <div className="grid grid-cols-2 divide-x divide-y divide-[var(--color-bs-border-soft)] sm:grid-cols-4 sm:divide-y-0">
               <Link
                 href="/clients"
-                className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 text-center transition-colors hover:bg-zinc-50 sm:py-4"
+                className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 text-center transition-colors hover:bg-white/5 sm:py-4"
               >
-                <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Активни клиенти</p>
-                <p className="text-lg font-semibold tabular-nums text-zinc-900">{adminData.metrics.activeClients}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-bs-subtle)]">Активни клиенти</p>
+                <p className="text-lg font-semibold tabular-nums text-[var(--color-bs-text)]">{adminData.metrics.activeClients}</p>
               </Link>
               <Link
                 href="/contracts"
-                className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 text-center transition-colors hover:bg-zinc-50 sm:py-4"
+                className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 text-center transition-colors hover:bg-white/5 sm:py-4"
               >
-                <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Активни договори</p>
-                <p className="text-lg font-semibold tabular-nums text-zinc-900">{adminData.metrics.activeContracts}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-bs-subtle)]">
+                  Активни договори
+                </p>
+                <p className="text-lg font-semibold tabular-nums text-[var(--color-bs-text)]">{adminData.metrics.activeContracts}</p>
               </Link>
               <Link
                 href="/invoices"
-                className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 text-center transition-colors hover:bg-zinc-50 sm:py-4"
+                className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 text-center transition-colors hover:bg-white/5 sm:py-4"
               >
-                <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Неплатени фактури</p>
-                <p className="text-lg font-semibold tabular-nums text-zinc-900">{adminData.metrics.unpaidInvoices}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-bs-subtle)]">
+                  Неплатени фактури
+                </p>
+                <p className="text-lg font-semibold tabular-nums text-[var(--color-bs-text)]">{adminData.metrics.unpaidInvoices}</p>
               </Link>
               <Link
                 href="/invoices"
-                className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 text-center transition-colors hover:bg-zinc-50 sm:py-4"
+                className="flex flex-col items-center justify-center gap-0.5 px-4 py-3 text-center transition-colors hover:bg-white/5 sm:py-4"
               >
-                <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">Просрочени фактури</p>
-                <p className="text-lg font-semibold tabular-nums text-zinc-900">{adminData.metrics.overdueInvoices}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-bs-subtle)]">
+                  Просрочени фактури
+                </p>
+                <p className="text-lg font-semibold tabular-nums text-[var(--color-bs-text)]">{adminData.metrics.overdueInvoices}</p>
               </Link>
             </div>
           </section>
 
           <section className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-              <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-                <h2 className="text-sm font-medium text-zinc-700">Екипен преглед</h2>
+            <div className="bs-surface-card overflow-hidden rounded-xl">
+              <div className="border-b border-[var(--color-bs-border-soft)] bg-white/5 px-4 py-3">
+                <h2 className="text-sm font-medium text-[var(--color-bs-text)]">Екипен преглед</h2>
               </div>
               <div className="flex flex-col gap-3 p-4">
-                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                  <p className="text-xs uppercase tracking-wide text-zinc-500">Служители с най-много задачи</p>
+                <div className="rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-3">
+                  <p className="text-xs uppercase tracking-wide text-[var(--color-bs-subtle)]">Служители с най-много задачи</p>
                   {adminData.teamOverview.topEmployees.length === 0 ? (
-                    <p className="mt-1 text-sm text-zinc-600">Няма данни за текущия месец.</p>
+                    <p className="mt-1 text-sm text-[var(--color-bs-muted)]">Няма данни за текущия месец.</p>
                   ) : (
-                    <ul className="mt-2 space-y-1 text-sm text-zinc-700">
+                    <ul className="mt-2 space-y-1 text-sm text-[var(--color-bs-muted)]">
                       {adminData.teamOverview.topEmployees.map((employee) => (
                         <li key={employee.id} className="flex items-center justify-between gap-3">
                           <span className="truncate">{employee.name}</span>
-                          <span className="font-medium tabular-nums text-zinc-900">{employee.taskCount}</span>
+                          <span className="font-medium tabular-nums text-[var(--color-bs-text)]">{employee.taskCount}</span>
                         </li>
                       ))}
                     </ul>
@@ -747,19 +764,21 @@ export default function Home() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                    <p className="text-xs uppercase tracking-wide text-zinc-500">Непредадени отчети</p>
-                    <p className="mt-1 text-lg font-semibold tabular-nums text-zinc-900">
+                  <article className="rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-3">
+                    <p className="text-xs uppercase tracking-wide text-[var(--color-bs-subtle)]">Непредадени отчети</p>
+                    <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--color-bs-text)]">
                       {adminData.teamOverview.unsubmittedReports}
                     </p>
                   </article>
-                  <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                    <p className="text-xs uppercase tracking-wide text-zinc-500">Чакащи преглед</p>
-                    <p className="mt-1 text-lg font-semibold tabular-nums text-zinc-900">{adminData.teamOverview.waitingReview}</p>
+                  <article className="rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-3">
+                    <p className="text-xs uppercase tracking-wide text-[var(--color-bs-subtle)]">Чакащи преглед</p>
+                    <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--color-bs-text)]">
+                      {adminData.teamOverview.waitingReview}
+                    </p>
                   </article>
-                  <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                    <p className="text-xs uppercase tracking-wide text-zinc-500">Без активност</p>
-                    <p className="mt-1 text-lg font-semibold tabular-nums text-zinc-900">
+                  <article className="rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-3">
+                    <p className="text-xs uppercase tracking-wide text-[var(--color-bs-subtle)]">Без активност</p>
+                    <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--color-bs-text)]">
                       {adminData.teamOverview.employeesWithoutActivity}
                     </p>
                   </article>
@@ -767,10 +786,13 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-                <h2 className="text-sm font-medium text-zinc-700">Наближаващи договори</h2>
-                <Link href="/contracts" className="text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-700">
+            <div className="bs-surface-card overflow-hidden rounded-xl">
+              <div className="flex items-center justify-between border-b border-[var(--color-bs-border-soft)] bg-white/5 px-4 py-3">
+                <h2 className="text-sm font-medium text-[var(--color-bs-text)]">Наближаващи договори</h2>
+                <Link
+                  href="/contracts"
+                  className="text-xs font-medium text-[var(--color-bs-muted)] transition-colors hover:text-[var(--color-bs-text)]"
+                >
                   Виж всички
                 </Link>
               </div>
@@ -780,17 +802,17 @@ export default function Home() {
                   description="Тук се показват договорите с изтичане до 60 дни."
                   actionHref="/contracts/add"
                   actionLabel="Добави договор"
-                  variant="compact"
+                  variant="compact-dark"
                 />
               ) : (
                 <div className="max-h-[320px] overflow-y-auto p-3">
                   <div className="space-y-2">
                     {adminData.expiringContracts.slice(0, 8).map((contract) => (
-                      <article key={contract.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                      <article key={contract.id} className="rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-zinc-900">{contract.contract_name}</p>
-                            <p className="truncate text-xs text-zinc-500">{contract.client_name}</p>
+                            <p className="truncate text-sm font-semibold text-[var(--color-bs-text)]">{contract.contract_name}</p>
+                            <p className="truncate text-xs text-[var(--color-bs-subtle)]">{contract.client_name}</p>
                           </div>
                           <span
                             className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusClasses(contract.days_left)}`}
@@ -798,7 +820,7 @@ export default function Home() {
                             {contract.days_left} дни
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-zinc-500">Край: {formatDate(contract.end_date)}</p>
+                        <p className="mt-1 text-xs text-[var(--color-bs-subtle)]">Край: {formatDate(contract.end_date)}</p>
                       </article>
                     ))}
                   </div>
@@ -807,49 +829,52 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-              <h2 className="text-sm font-medium text-zinc-700">Предстоящи</h2>
+          <section className="bs-surface-card overflow-hidden rounded-xl">
+            <div className="border-b border-[var(--color-bs-border-soft)] bg-white/5 px-4 py-3">
+              <h2 className="text-sm font-medium text-[var(--color-bs-text)]">Предстоящи</h2>
             </div>
             <div className="grid gap-3 p-4 lg:grid-cols-3">
-              <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+              <article className="rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-zinc-800">Предстоящи фактури</h3>
-                  <Link href="/invoices" className="text-xs text-zinc-500 hover:text-zinc-700">
+                  <h3 className="text-sm font-medium text-[var(--color-bs-text)]">Предстоящи фактури</h3>
+                  <Link href="/invoices" className="text-xs text-[var(--color-bs-muted)] transition-colors hover:text-[var(--color-bs-text)]">
                     Виж
                   </Link>
                 </div>
                 {adminData.upcomingInvoices.length === 0 ? (
-                  <p className="text-sm text-zinc-600">Няма фактури с падеж до 30 дни.</p>
+                  <p className="text-sm text-[var(--color-bs-muted)]">Няма фактури с падеж до 30 дни.</p>
                 ) : (
-                  <ul className="space-y-1.5 text-sm text-zinc-700">
+                  <ul className="space-y-1.5 text-sm text-[var(--color-bs-muted)]">
                     {adminData.upcomingInvoices.slice(0, 6).map((invoice) => (
                       <li key={invoice.id} className="flex items-center justify-between gap-2">
                         <span className="truncate">
                           {invoice.clientName} · #{invoice.invoiceNumber}
                         </span>
-                        <span className="whitespace-nowrap text-xs text-zinc-500">{formatDate(invoice.dueDate)}</span>
+                        <span className="whitespace-nowrap text-xs text-[var(--color-bs-subtle)]">{formatDate(invoice.dueDate)}</span>
                       </li>
                     ))}
                   </ul>
                 )}
               </article>
 
-              <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+              <article className="rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-zinc-800">Чакащи отчети</h3>
-                  <Link href="/work-reports" className="text-xs text-zinc-500 hover:text-zinc-700">
+                  <h3 className="text-sm font-medium text-[var(--color-bs-text)]">Чакащи отчети</h3>
+                  <Link
+                    href="/work-reports"
+                    className="text-xs text-[var(--color-bs-muted)] transition-colors hover:text-[var(--color-bs-text)]"
+                  >
                     Виж
                   </Link>
                 </div>
                 {adminData.pendingReports.length === 0 ? (
-                  <p className="text-sm text-zinc-600">Няма отчети в очакване на преглед.</p>
+                  <p className="text-sm text-[var(--color-bs-muted)]">Няма отчети в очакване на преглед.</p>
                 ) : (
-                  <ul className="space-y-1.5 text-sm text-zinc-700">
+                  <ul className="space-y-1.5 text-sm text-[var(--color-bs-muted)]">
                     {adminData.pendingReports.map((report) => (
                       <li key={report.id} className="flex items-center justify-between gap-2">
                         <span className="truncate">{report.employeeName}</span>
-                        <span className="whitespace-nowrap text-xs text-zinc-500">
+                        <span className="whitespace-nowrap text-xs text-[var(--color-bs-subtle)]">
                           {monthlyReportStatusDisplayLabel(report.status)}
                         </span>
                       </li>
@@ -858,21 +883,24 @@ export default function Home() {
                 )}
               </article>
 
-              <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+              <article className="rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-zinc-800">Изтичащи договори</h3>
-                  <Link href="/contracts" className="text-xs text-zinc-500 hover:text-zinc-700">
+                  <h3 className="text-sm font-medium text-[var(--color-bs-text)]">Изтичащи договори</h3>
+                  <Link
+                    href="/contracts"
+                    className="text-xs text-[var(--color-bs-muted)] transition-colors hover:text-[var(--color-bs-text)]"
+                  >
                     Виж
                   </Link>
                 </div>
                 {adminData.expiringContracts.length === 0 ? (
-                  <p className="text-sm text-zinc-600">Няма изтичащи договори.</p>
+                  <p className="text-sm text-[var(--color-bs-muted)]">Няма изтичащи договори.</p>
                 ) : (
-                  <ul className="space-y-1.5 text-sm text-zinc-700">
+                  <ul className="space-y-1.5 text-sm text-[var(--color-bs-muted)]">
                     {adminData.expiringContracts.slice(0, 6).map((contract) => (
                       <li key={contract.id} className="flex items-center justify-between gap-2">
                         <span className="truncate">{contract.client_name}</span>
-                        <span className="whitespace-nowrap text-xs text-zinc-500">{contract.days_left} дни</span>
+                        <span className="whitespace-nowrap text-xs text-[var(--color-bs-subtle)]">{contract.days_left} дни</span>
                       </li>
                     ))}
                   </ul>

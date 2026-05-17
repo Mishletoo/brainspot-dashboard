@@ -42,11 +42,11 @@ function formatCreatedAt(value: string) {
 function statusBadgeClass(status: UserRow["status"]) {
   switch (status) {
     case "active":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+      return "bs-status-success";
     case "inactive":
-      return "border-red-200 bg-red-50 text-red-700";
+      return "bs-status-danger";
     default:
-      return "border-amber-200 bg-amber-50 text-amber-700";
+      return "bs-status-warning";
   }
 }
 
@@ -176,17 +176,17 @@ export default function ManageUsersPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Управление на потребители</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Управление на потребители</h1>
+        <p className="mt-1 text-sm text-[var(--color-bs-muted)]">
           Създавайте потребители за вход и управлявайте роли и достъп до системата.
         </p>
       </div>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-medium text-zinc-900">Нов потребител</h2>
+      <section className="bs-surface-card rounded-xl p-5">
+        <h2 className="text-sm font-medium text-[var(--color-bs-text)]">Нов потребител</h2>
         <form onSubmit={handleCreateUser} className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="md:col-span-2">
-            <label htmlFor="user_email" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="user_email" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Имейл
             </label>
             <input
@@ -194,14 +194,14 @@ export default function ManageUsersPage() {
               type="email"
               value={form.email}
               onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200"
+              className="bs-input mt-1 w-full px-3 py-2 text-sm"
               placeholder="staff@brainspot.bg"
               disabled={isSubmitting}
             />
           </div>
 
           <div>
-            <label htmlFor="user_role" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="user_role" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Роля
             </label>
             <select
@@ -213,7 +213,7 @@ export default function ManageUsersPage() {
                   role: event.target.value as AppRole,
                 }))
               }
-              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200"
+              className="bs-input mt-1 w-full px-3 py-2 text-sm"
               disabled={isSubmitting}
             >
               {APP_ROLES.map((role) => (
@@ -225,7 +225,7 @@ export default function ManageUsersPage() {
           </div>
 
           <div>
-            <label htmlFor="temporary_password" className="text-sm font-medium text-zinc-700">
+            <label htmlFor="temporary_password" className="text-sm font-medium text-[var(--color-bs-muted)]">
               Временна парола
             </label>
             <input
@@ -235,7 +235,7 @@ export default function ManageUsersPage() {
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, temporaryPassword: event.target.value }))
               }
-              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200"
+              className="bs-input mt-1 w-full px-3 py-2 text-sm"
               disabled={isSubmitting}
             />
           </div>
@@ -244,7 +244,7 @@ export default function ManageUsersPage() {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="bs-btn-primary px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? "Създаване..." : "Създай потребител"}
             </button>
@@ -253,19 +253,19 @@ export default function ManageUsersPage() {
       </section>
 
       {errorMessage && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
           {errorMessage}
         </div>
       )}
       {successMessage && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div className="rounded-lg border border-emerald-400/35 bg-emerald-500/12 px-4 py-3 text-sm text-emerald-200">
           {successMessage}
         </div>
       )}
 
-      <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+      <section className="overflow-x-auto rounded-xl border border-[var(--color-bs-border-soft)] bg-[rgba(18,20,23,0.74)] shadow-[0_18px_36px_-28px_rgba(0,0,0,0.9)]">
         <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
+          <thead className="border-b border-[var(--color-bs-border-soft)] bg-white/5 text-[var(--color-bs-subtle)]">
             <tr>
               <th className="px-4 py-3 font-medium">Имейл</th>
               <th className="px-4 py-3 font-medium">Роля</th>
@@ -278,13 +278,13 @@ export default function ManageUsersPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td className="px-4 py-4 text-zinc-600" colSpan={6}>
+                <td className="px-4 py-4 text-[var(--color-bs-muted)]" colSpan={6}>
                   Зареждане...
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td className="px-4 py-4 text-zinc-600" colSpan={6}>
+                <td className="px-4 py-4 text-[var(--color-bs-muted)]" colSpan={6}>
                   Все още няма потребители.
                 </td>
               </tr>
@@ -292,13 +292,13 @@ export default function ManageUsersPage() {
               users.map((user) => {
                 const isRowBusy = busyRowId === user.id;
                 return (
-                  <tr key={user.id} className="border-b border-zinc-100 align-top last:border-b-0">
-                    <td className="px-4 py-3 text-zinc-900">{user.email ?? "-"}</td>
+                  <tr key={user.id} className="border-b border-[var(--color-bs-border-soft)]/80 align-top last:border-b-0">
+                    <td className="px-4 py-3 text-[var(--color-bs-text)]">{user.email ?? "-"}</td>
                     <td className="px-4 py-3">
                       <select
                         value={user.role}
                         onChange={(event) => handleRoleChange(user.id, event.target.value as AppRole)}
-                        className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200"
+                        className="bs-input rounded-md px-2 py-1 text-sm"
                         disabled={isRowBusy}
                       >
                         {APP_ROLES.map((role) => (
@@ -319,17 +319,17 @@ export default function ManageUsersPage() {
                             : "чака свързване"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-zinc-700">
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">
                       {user.linkedEmployeeName ?? user.linkedEmployeeId ?? "-"}
                     </td>
-                    <td className="px-4 py-3 text-zinc-700">{formatCreatedAt(user.createdAt)}</td>
+                    <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatCreatedAt(user.createdAt)}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => handleStatusToggle(user)}
                           disabled={isRowBusy}
-                          className="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                          className="bs-btn px-2.5 py-1 text-xs font-medium disabled:opacity-50"
                         >
                           {user.isActive ? "Деактивирай" : "Активирай"}
                         </button>

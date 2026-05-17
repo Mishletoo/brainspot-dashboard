@@ -45,11 +45,11 @@ function formatDate(value: string | null) {
 }
 
 function getStatusBadgeClass(status: string) {
-  if (status === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (status === "overdue") return "border-rose-200 bg-rose-50 text-rose-700";
-  if (status === "sent") return "border-blue-200 bg-blue-50 text-blue-700";
-  if (status === "waiting") return "border-amber-200 bg-amber-50 text-amber-700";
-  return "border-zinc-200 bg-zinc-100 text-zinc-700";
+  if (status === "paid") return "bs-status-success";
+  if (status === "overdue") return "bs-status-danger";
+  if (status === "sent") return "bs-status-info";
+  if (status === "waiting") return "bs-status-warning";
+  return "bs-status-neutral";
 }
 
 function getStatusLabel(status: string) {
@@ -242,10 +242,10 @@ export default function FinancePage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold text-zinc-900">Финанси</h1>
-        <p className="text-sm text-zinc-500">Преглед на фактурите и статуса на плащанията.</p>
-        <div className="max-w-56 rounded-xl border border-zinc-200 bg-white px-3 py-2">
-          <label htmlFor="finance-month" className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">
+        <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Финанси</h1>
+        <p className="text-sm text-[var(--color-bs-muted)]">Преглед на фактурите и статуса на плащанията.</p>
+        <div className="max-w-56 rounded-xl border border-[var(--color-bs-border-soft)] bg-white/5 px-3 py-2 shadow-[0_10px_26px_-22px_rgba(0,0,0,0.86)]">
+          <label htmlFor="finance-month" className="mb-1 block text-xs uppercase tracking-wide text-[var(--color-bs-subtle)]">
             Месец
           </label>
           <input
@@ -253,32 +253,32 @@ export default function FinancePage() {
             type="month"
             value={monthValue}
             onChange={(event) => setMonthValue(event.target.value)}
-            className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-zinc-500"
+            className="bs-input w-full rounded-md px-2 py-1 text-sm"
           />
         </div>
       </div>
 
       {isLoading && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">
+        <div className="rounded-xl border border-[var(--color-bs-border-soft)] bg-white/5 p-6 text-sm text-[var(--color-bs-muted)]">
           Зареждане на финансови данни...
         </div>
       )}
 
       {!isLoading && errorMessage && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">{errorMessage}</div>
+        <div className="rounded-xl border border-rose-400/40 bg-rose-500/10 p-6 text-sm text-rose-200">{errorMessage}</div>
       )}
 
       {!isLoading && !errorMessage && (
         <>
-          <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-              <h2 className="text-sm font-medium text-zinc-700">Рекламен бюджет по клиенти</h2>
+          <section className="overflow-x-auto rounded-xl border border-[var(--color-bs-border-soft)] bg-[rgba(18,20,23,0.74)] shadow-[0_18px_36px_-28px_rgba(0,0,0,0.9)]">
+            <div className="border-b border-[var(--color-bs-border-soft)] bg-white/5 px-4 py-3">
+              <h2 className="text-sm font-medium text-[var(--color-bs-text)]">Рекламен бюджет по клиенти</h2>
             </div>
             {adSpendRows.length === 0 ? (
-              <div className="p-4 text-sm text-zinc-500">Няма данни за рекламен бюджет за този месец.</div>
+              <div className="p-4 text-sm text-[var(--color-bs-muted)]">Няма данни за рекламен бюджет за този месец.</div>
             ) : (
               <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
+                <thead className="border-b border-[var(--color-bs-border-soft)] bg-white/5 text-[var(--color-bs-subtle)]">
                   <tr>
                     <th className="px-4 py-3 font-medium">Клиент</th>
                     <th className="px-4 py-3 font-medium text-right">Разход Meta Ads</th>
@@ -291,14 +291,14 @@ export default function FinancePage() {
                 </thead>
                 <tbody>
                   {adSpendRows.map((row) => (
-                    <tr key={row.clientId} className="border-b border-zinc-100 last:border-b-0">
-                      <td className="px-4 py-3 text-zinc-900">{row.clientName}</td>
-                      <td className="px-4 py-3 text-right text-zinc-700">{formatAmount(row.metaAdsSpend)}</td>
-                      <td className="px-4 py-3 text-right text-zinc-700">{formatAmount(row.googleAdsSpend)}</td>
-                      <td className="px-4 py-3 text-right font-medium text-zinc-900">{formatAmount(row.totalSpend)}</td>
-                      <td className="px-4 py-3 text-right text-zinc-700">{formatAmount(row.metaAdsCommission)}</td>
-                      <td className="px-4 py-3 text-right text-zinc-700">{formatAmount(row.googleAdsCommission)}</td>
-                      <td className="px-4 py-3 text-right font-medium text-zinc-900">
+                    <tr key={row.clientId} className="border-b border-[var(--color-bs-border-soft)]/80 last:border-b-0">
+                      <td className="px-4 py-3 text-[var(--color-bs-text)]">{row.clientName}</td>
+                      <td className="px-4 py-3 text-right text-[var(--color-bs-muted)]">{formatAmount(row.metaAdsSpend)}</td>
+                      <td className="px-4 py-3 text-right text-[var(--color-bs-muted)]">{formatAmount(row.googleAdsSpend)}</td>
+                      <td className="px-4 py-3 text-right font-medium text-[var(--color-bs-text)]">{formatAmount(row.totalSpend)}</td>
+                      <td className="px-4 py-3 text-right text-[var(--color-bs-muted)]">{formatAmount(row.metaAdsCommission)}</td>
+                      <td className="px-4 py-3 text-right text-[var(--color-bs-muted)]">{formatAmount(row.googleAdsCommission)}</td>
+                      <td className="px-4 py-3 text-right font-medium text-[var(--color-bs-text)]">
                         {formatAmount(row.totalCommission)}
                       </td>
                     </tr>
@@ -309,30 +309,30 @@ export default function FinancePage() {
           </section>
 
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-600">Общо фактури</p>
-              <p className="mt-2 text-2xl font-semibold text-zinc-900">{formatAmount(metrics.totalInvoicesAmount)}</p>
+            <div className="rounded-xl border border-[var(--color-bs-border-soft)] bg-white/5 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-bs-subtle)]">Общо фактури</p>
+              <p className="mt-2 text-2xl font-semibold text-[var(--color-bs-text)]">{formatAmount(metrics.totalInvoicesAmount)}</p>
             </div>
 
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">Платени фактури</p>
-              <p className="mt-2 text-2xl font-semibold text-emerald-900">{formatAmount(metrics.paidInvoicesAmount)}</p>
+            <div className="rounded-xl border border-emerald-400/35 bg-emerald-500/12 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-emerald-200">Платени фактури</p>
+              <p className="mt-2 text-2xl font-semibold text-emerald-100">{formatAmount(metrics.paidInvoicesAmount)}</p>
             </div>
 
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-amber-700">Неплатени фактури</p>
-              <p className="mt-2 text-2xl font-semibold text-amber-900">{formatAmount(metrics.unpaidInvoicesAmount)}</p>
+            <div className="rounded-xl border border-amber-400/35 bg-amber-500/12 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-amber-200">Неплатени фактури</p>
+              <p className="mt-2 text-2xl font-semibold text-amber-100">{formatAmount(metrics.unpaidInvoicesAmount)}</p>
             </div>
 
-            <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-rose-700">Просрочени фактури</p>
-              <p className="mt-2 text-2xl font-semibold text-rose-900">{formatAmount(metrics.overdueInvoicesAmount)}</p>
+            <div className="rounded-xl border border-rose-400/35 bg-rose-500/12 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-rose-200">Просрочени фактури</p>
+              <p className="mt-2 text-2xl font-semibold text-rose-100">{formatAmount(metrics.overdueInvoicesAmount)}</p>
             </div>
           </section>
 
-          <section className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-              <h2 className="text-sm font-medium text-zinc-700">Последни фактури</h2>
+          <section className="overflow-x-auto rounded-xl border border-[var(--color-bs-border-soft)] bg-[rgba(18,20,23,0.74)] shadow-[0_18px_36px_-28px_rgba(0,0,0,0.9)]">
+            <div className="border-b border-[var(--color-bs-border-soft)] bg-white/5 px-4 py-3">
+              <h2 className="text-sm font-medium text-[var(--color-bs-text)]">Последни фактури</h2>
             </div>
 
             {recentInvoices.length === 0 ? (
@@ -341,11 +341,11 @@ export default function FinancePage() {
                 description="Тук ще се показват последните фактури."
                 actionHref="/invoices/add"
                 actionLabel="Добави фактура"
-                variant="compact"
+                variant="compact-dark"
               />
             ) : (
               <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
+                <thead className="border-b border-[var(--color-bs-border-soft)] bg-white/5 text-[var(--color-bs-subtle)]">
                   <tr>
                     <th className="px-4 py-3 font-medium">Номер на фактура</th>
                     <th className="px-4 py-3 font-medium">Клиент</th>
@@ -356,11 +356,11 @@ export default function FinancePage() {
                 </thead>
                 <tbody>
                   {recentInvoices.map((invoice) => (
-                    <tr key={invoice.id} className="border-b border-zinc-100 last:border-b-0">
-                      <td className="px-4 py-3 text-zinc-900">{invoice.invoice_number}</td>
-                      <td className="px-4 py-3 text-zinc-900">{invoice.client_name}</td>
-                      <td className="px-4 py-3 text-zinc-700">{formatAmount(invoice.amount)}</td>
-                      <td className="px-4 py-3 text-zinc-700">{formatDate(invoice.due_date)}</td>
+                    <tr key={invoice.id} className="border-b border-[var(--color-bs-border-soft)]/80 last:border-b-0">
+                      <td className="px-4 py-3 text-[var(--color-bs-text)]">{invoice.invoice_number}</td>
+                      <td className="px-4 py-3 text-[var(--color-bs-text)]">{invoice.client_name}</td>
+                      <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatAmount(invoice.amount)}</td>
+                      <td className="px-4 py-3 text-[var(--color-bs-muted)]">{formatDate(invoice.due_date)}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusBadgeClass(invoice.status)}`}

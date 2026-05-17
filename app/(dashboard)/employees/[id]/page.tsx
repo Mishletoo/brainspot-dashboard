@@ -113,7 +113,7 @@ export default function EmployeeDetailsPage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-2xl">
-        <p className="text-sm text-zinc-600">Зареждане на служител...</p>
+        <p className="text-sm text-[var(--color-bs-muted)]">Зареждане на служител...</p>
       </div>
     );
   }
@@ -121,8 +121,10 @@ export default function EmployeeDetailsPage() {
   if (errorMessage || !employee) {
     return (
       <div className="mx-auto w-full max-w-2xl">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{errorMessage || "Служителят не е намерен."}</div>
-        <Link href="/employees" className="mt-4 inline-block text-sm text-zinc-600 hover:text-zinc-900">
+        <div className="rounded-xl border border-rose-300/35 bg-[rgba(255,110,140,0.1)] p-6 text-sm text-rose-300">
+          {errorMessage || "Служителят не е намерен."}
+        </div>
+        <Link href="/employees" className="mt-4 inline-block text-sm text-[var(--color-bs-muted)] hover:text-[var(--color-bs-text)]">
           ← Назад към служителите
         </Link>
       </div>
@@ -137,19 +139,19 @@ export default function EmployeeDetailsPage() {
       : "Свързан (активен)";
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div className="mx-auto w-full max-w-2xl text-[var(--color-bs-text)]">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <Link href="/employees" className="mb-2 inline-block text-sm text-zinc-500 hover:text-zinc-700">
+          <Link href="/employees" className="mb-2 inline-block text-sm text-[var(--color-bs-muted)] hover:text-[var(--color-bs-text)]">
             ← Назад към служителите
           </Link>
-          <h1 className="text-2xl font-semibold text-zinc-900">{fullName}</h1>
-          {employee.position && <p className="mt-1 text-sm text-zinc-600">{employee.position}</p>}
+          <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">{fullName}</h1>
+          {employee.position && <p className="mt-1 text-sm text-[var(--color-bs-muted)]">{employee.position}</p>}
         </div>
         <div className="flex items-center gap-2">
           <Link
             href={`/employees/${id}/edit`}
-            className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="bs-btn px-4 py-2 text-sm font-medium"
           >
             Редактирай
           </Link>
@@ -157,20 +159,20 @@ export default function EmployeeDetailsPage() {
             type="button"
             onClick={handleDelete}
             disabled={isDeleting}
-            className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+            className="rounded-lg border border-rose-300/35 bg-[rgba(255,110,140,0.08)] px-4 py-2 text-sm font-medium text-rose-300 hover:bg-[rgba(255,110,140,0.14)]"
           >
             {isDeleting ? "Изтриване..." : "Изтрий"}
           </button>
         </div>
       </div>
 
-      {deleteErrorMessage && <p className="mb-4 text-sm text-red-600">{deleteErrorMessage}</p>}
+      {deleteErrorMessage && <p className="mb-4 text-sm text-rose-300">{deleteErrorMessage}</p>}
 
-      <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <div className="border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Детайли</h2>
+      <div className="bs-surface-card rounded-xl">
+        <div className="border-b border-[var(--color-bs-border-soft)] px-4 py-3">
+          <h2 className="text-sm font-medium text-[var(--color-bs-muted)]">Детайли</h2>
         </div>
-        <dl className="divide-y divide-zinc-100">
+        <dl className="divide-y divide-[var(--color-bs-border-soft)]">
           <DetailRow label="Име" value={employee.first_name} />
           <DetailRow label="Фамилия" value={employee.last_name} />
           <DetailRow label="Позиция" value={employee.position} />
@@ -184,11 +186,11 @@ export default function EmployeeDetailsPage() {
         </dl>
       </div>
 
-      <div className="mt-6 rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <div className="border-b border-zinc-200 px-4 py-3">
-          <h2 className="text-sm font-medium text-zinc-700">Възнаграждение</h2>
+      <div className="bs-surface-card mt-6 rounded-xl">
+        <div className="border-b border-[var(--color-bs-border-soft)] px-4 py-3">
+          <h2 className="text-sm font-medium text-[var(--color-bs-muted)]">Възнаграждение</h2>
         </div>
-        <dl className="divide-y divide-zinc-100">
+        <dl className="divide-y divide-[var(--color-bs-border-soft)]">
           <DetailRow label="Часове на ден" value={employee.hours_per_day != null ? String(employee.hours_per_day) : "-"} />
           <DetailRow label="Брутна заплата" value={formatCurrency(employee.gross_salary)} />
           <DetailRow label="Нетна заплата" value={formatCurrency(employee.net_salary)} />
@@ -214,8 +216,8 @@ export default function EmployeeDetailsPage() {
 function DetailRow({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="flex justify-between gap-4 px-4 py-3">
-      <dt className="text-sm text-zinc-500">{label}</dt>
-      <dd className="text-right text-sm text-zinc-900">{value ?? "-"}</dd>
+      <dt className="text-sm text-[var(--color-bs-muted)]">{label}</dt>
+      <dd className="text-right text-sm text-[var(--color-bs-text)]">{value ?? "-"}</dd>
     </div>
   );
 }

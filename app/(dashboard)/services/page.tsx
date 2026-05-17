@@ -65,26 +65,28 @@ export default function ServicesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 text-[var(--color-bs-text)]">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Услуги</h1>
-          <p className="text-sm text-zinc-500">Управлявайте каталога с услуги.</p>
+          <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Услуги</h1>
+          <p className="text-sm text-[var(--color-bs-muted)]">Управлявайте каталога с услуги.</p>
         </div>
         <Link
           href="/services/add"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+          className="bs-btn-primary px-4 py-2 text-sm font-medium"
         >
           Добави услуга
         </Link>
       </div>
 
       {isLoading && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">Зареждане на услуги...</div>
+        <div className="bs-surface-card rounded-xl p-6 text-sm text-[var(--color-bs-muted)]">Зареждане на услуги...</div>
       )}
 
       {!isLoading && errorMessage && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{errorMessage}</div>
+        <div className="rounded-xl border border-rose-300/35 bg-[rgba(255,110,140,0.1)] p-6 text-sm text-rose-300">
+          {errorMessage}
+        </div>
       )}
 
       {!isLoading && !errorMessage && services.length === 0 && (
@@ -93,13 +95,14 @@ export default function ServicesPage() {
           description="Добавете услуги в каталога и ги свържете с клиенти с индивидуални цени."
           actionHref="/services/add"
           actionLabel="Добави услуга"
+          variant="dark"
         />
       )}
 
       {!isLoading && !errorMessage && services.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <div className="bs-surface-card bs-scroll-fade overflow-x-auto rounded-xl">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
+            <thead className="border-b border-[var(--color-bs-border-soft)] bg-white/[0.03] text-[var(--color-bs-muted)]">
               <tr>
                 <th className="px-4 py-3 font-medium">Име</th>
                 <th className="px-4 py-3 font-medium">Описание</th>
@@ -108,14 +111,14 @@ export default function ServicesPage() {
             </thead>
             <tbody>
               {services.map((service) => (
-                <tr key={service.id} className="border-b border-zinc-100 last:border-b-0">
-                  <td className="px-4 py-3 text-zinc-900">{service.name}</td>
-                  <td className="px-4 py-3 text-zinc-700">{service.description || "-"}</td>
+                <tr key={service.id} className="border-b border-[var(--color-bs-border-soft)] last:border-b-0">
+                  <td className="px-4 py-3 text-[var(--color-bs-text)]">{service.name}</td>
+                  <td className="px-4 py-3 text-[var(--color-bs-muted)]">{service.description || "-"}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/services/${service.id}/edit`}
-                        className="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+                        className="bs-btn px-2.5 py-1 text-xs font-medium"
                       >
                         Редактирай
                       </Link>
@@ -123,7 +126,7 @@ export default function ServicesPage() {
                         type="button"
                         onClick={() => handleDeleteService(service.id)}
                         disabled={deletingServiceId === service.id}
-                        className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-md border border-rose-300/35 bg-[rgba(255,110,140,0.08)] px-2.5 py-1 text-xs font-medium text-rose-300 hover:bg-[rgba(255,110,140,0.14)] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {deletingServiceId === service.id ? "Изтриване..." : "Изтрий"}
                       </button>
