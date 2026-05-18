@@ -5,6 +5,7 @@ import {
   ensureAdminContext,
   formatPostgrestError,
   getRoleFromRequest,
+  isMissingIsActiveColumnError,
   normalizeEmail,
 } from "./_shared";
 
@@ -13,12 +14,6 @@ type UsersPostBody = {
   role?: unknown;
   temporaryPassword?: unknown;
 };
-
-function isMissingIsActiveColumnError(error: { message?: string } | null) {
-  if (!error?.message) return false;
-  const message = error.message.toLowerCase();
-  return message.includes("is_active") && message.includes("column");
-}
 
 export async function GET() {
   try {
@@ -127,7 +122,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ users });
+    return NextResponse.json({ users, currentUserId: auth.currentUserId });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unexpected server error.";
     return NextResponse.json({ error: message }, { status: 500 });

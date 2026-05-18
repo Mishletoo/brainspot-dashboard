@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { AppRole, isAppRole, resolveAppRole } from "@/lib/roles";
@@ -14,12 +15,6 @@ type AuthContext =
 export function getRoleFromRequest(value: unknown): AppRole | null {
   if (typeof value !== "string") return null;
   return isAppRole(value) ? value : null;
-}
-
-function isMissingIsActiveColumnError(error: { message?: string } | null) {
-  if (!error?.message) return false;
-  const message = error.message.toLowerCase();
-  return message.includes("is_active") && message.includes("column");
 }
 
 export async function ensureAdminContext(): Promise<AuthContext> {
@@ -105,4 +100,22 @@ export function normalizeEmail(email: string) {
 export function formatPostgrestError(error: PostgrestError | null, fallback: string) {
   if (!error) return fallback;
   return error.message ? `${fallback} ${error.message}` : fallback;
+}
+
+const TEMP_PASSWORD_ALPHABET =
+  "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+
+export function generateTemporaryPassword(length = 14) {
+  const bytes = randomBytes(length);
+  let password = "";
+  for (let i = 0; i < length; i += 1) {
+    password += TEMP_PASSWORD_ALPHABET[bytes[i]! % TEMP_PASSWORD_ALPHABET.length];
+  }
+  return password;
+}
+
+export function isMissingIsActiveColumnError(error: { message?: string } | null) {
+  if (!error?.message) return false;
+  const message = error.message.toLowerCase();
+  return message.includes("is_active") && message.includes("column");
 }

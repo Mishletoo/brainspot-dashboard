@@ -1,15 +1,18 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DatePicker } from "@/components/ui/DatePicker";
+import { FormEvent, useCallback, useEffect, useMemo, useState, type SyntheticEvent } from "react";
+import { CustomSelect, DatePicker, Toast, type SelectOption } from "@/components/ui";
+import {
+  WorkReportItemDetailModal,
+  type WorkReportItemDetail,
+  type WorkReportItemEditValues,
+} from "@/components/work-reports/WorkReportItemDetailModal";
 import { PersonalTasksModule } from "@/app/(dashboard)/tasks/page";
 import { resolveAppRole, type AppRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabaseClient";
 
 type LookupItem = { id: string; name: string };
 type EmployeeOption = { id: string; name: string };
-type SelectOption = { value: string; label: string };
-
 type WorkItem = {
   id: string;
   clientId: string | null;
@@ -38,171 +41,6 @@ type MonthlyAdSpendState = {
   googleAdsSpend: string;
 };
 
-type CustomSelectProps = {
-  id?: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: SelectOption[];
-  placeholder?: string;
-  disabled?: boolean;
-  className?: string;
-  buttonClassName?: string;
-};
-
-function CustomSelect({
-  id,
-  value,
-  onChange,
-  options,
-  placeholder = "Избери",
-  disabled = false,
-  className = "",
-  buttonClassName = "",
-}: CustomSelectProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
-  const selectedOption = options.find((option) => option.value === value) ?? null;
-  const updateMenuPosition = useCallback(() => {
-    const trigger = triggerRef.current;
-    if (!trigger) return;
-
-    const rect = trigger.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportPadding = 8;
-    const width = Math.min(rect.width, Math.max(160, viewportWidth - viewportPadding * 2));
-    const maxLeft = viewportWidth - viewportPadding - width;
-    const left = Math.min(Math.max(rect.left, viewportPadding), Math.max(viewportPadding, maxLeft));
-
-    setMenuPosition({
-      top: rect.bottom + 6,
-      left,
-      width,
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleOutsideClick = (event: MouseEvent) => {
-      const target = event.target as Node | null;
-      if (rootRef.current && target && !rootRef.current.contains(target)) {
-        setIsOpen(false);
-      }
-    };
-
-    window.addEventListener("mousedown", handleOutsideClick);
-    return () => window.removeEventListener("mousedown", handleOutsideClick);
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    updateMenuPosition();
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsOpen(false);
-      }
-    };
-    const handleViewportChange = () => {
-      setIsOpen(false);
-    };
-
-    window.addEventListener("keydown", handleEscape);
-    window.addEventListener("resize", handleViewportChange);
-    window.addEventListener("scroll", handleViewportChange, true);
-
-    return () => {
-      window.removeEventListener("keydown", handleEscape);
-      window.removeEventListener("resize", handleViewportChange);
-      window.removeEventListener("scroll", handleViewportChange, true);
-    };
-  }, [isOpen, updateMenuPosition]);
-
-  const triggerClasses = [
-    "flex w-full items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition-colors focus-visible:border-zinc-500",
-    disabled ? "opacity-60 cursor-not-allowed" : "hover:border-zinc-500/80",
-    buttonClassName,
-  ]
-    .filter(Boolean)
-    .join(" ");
-  const rootClasses = [
-    "relative overflow-visible",
-    isOpen ? "z-[70]" : "z-10",
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  return (
-    <div ref={rootRef} className={rootClasses}>
-      <button
-        ref={triggerRef}
-        id={id}
-        type="button"
-        disabled={disabled}
-        onClick={() => {
-          if (disabled) return;
-          if (!isOpen) updateMenuPosition();
-          setIsOpen((prev) => !prev);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            setIsOpen(false);
-          }
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            if (!disabled) setIsOpen((prev) => !prev);
-          }
-          if (event.key === "ArrowDown" && !isOpen) {
-            event.preventDefault();
-            if (!disabled) setIsOpen(true);
-          }
-        }}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        className={triggerClasses}
-      >
-        <span className="truncate">{selectedOption?.label ?? placeholder}</span>
-        <span className="ml-2 text-xs text-zinc-400">{isOpen ? "▲" : "▼"}</span>
-      </button>
-
-      {isOpen && (
-        <div
-          className="fixed z-[9999] max-h-60 overflow-y-auto overflow-x-hidden rounded-lg border border-zinc-700 bg-zinc-950 p-1 shadow-2xl"
-          style={{ top: menuPosition.top, left: menuPosition.left, width: menuPosition.width }}
-        >
-          <ul role="listbox" aria-labelledby={id} className="space-y-0.5">
-            {options.map((option) => {
-              const isActive = option.value === value;
-              return (
-                <li key={option.value}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={isActive}
-                    onClick={() => {
-                      onChange(option.value);
-                      setIsOpen(false);
-                    }}
-                    className={`w-full rounded-md px-2.5 py-1.5 text-left text-sm transition-colors ${
-                      isActive
-                        ? "bg-zinc-800 text-zinc-100"
-                        : "text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
 
 type MonthState = {
   status: string;
@@ -295,6 +133,23 @@ function formatDateRangeDisplay(startDate: string | null, endDate: string | null
   return end ? `${start} – ${end}` : start;
 }
 
+function formatDateTimeDisplay(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("bg-BG", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function stopRowEvent(event: SyntheticEvent) {
+  event.stopPropagation();
+}
+
 function monthBounds(monthValue: string) {
   const [year, month] = monthValue.split("-").map(Number);
   const start = new Date(year, month - 1, 1);
@@ -366,6 +221,63 @@ function taskStatusRowClasses(status: string): string {
   return TASK_STATUS_ROW_STYLES[status] ?? TASK_STATUS_ROW_STYLES.waiting;
 }
 
+/** Shared responsive grid for draft list header + rows (lg+). */
+const DRAFT_LIST_GRID_CLASS =
+  "lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)_minmax(0,1.25fr)_4.5rem_7rem_5.75rem_7rem_4.5rem] lg:items-center lg:gap-x-2.5";
+const DRAFT_LIST_HEADER_CLASS =
+  "hidden lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)_minmax(0,1.25fr)_4.5rem_7rem_5.75rem_7rem_4.5rem] lg:items-center lg:gap-x-2.5";
+
+const DRAFT_COMPACT_CELL = "min-w-0 isolate overflow-hidden";
+const DRAFT_META_CELL = "min-w-0 shrink-0 isolate overflow-hidden";
+const DRAFT_ROW_ICON_BTN =
+  "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-zinc-700/80 bg-zinc-900/80 text-zinc-400 transition-colors hover:border-zinc-500 hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-50";
+
+function EyeIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-3.5 w-3.5"
+      aria-hidden
+    >
+      <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z" />
+      <circle cx="12" cy="12" r="2.5" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-3.5 w-3.5"
+      aria-hidden
+    >
+      <path d="M4 7h16" />
+      <path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7" />
+      <path d="M7.5 7 8.2 19.2A1.8 1.8 0 0 0 10 21h4a1.8 1.8 0 0 0 1.8-1.8L16.5 7" />
+    </svg>
+  );
+}
+
+const COMPACT_HOURS_BADGE =
+  "inline-flex h-7 w-[4.5rem] min-w-[4.5rem] shrink-0 items-center justify-center truncate rounded-md border border-zinc-700/80 bg-zinc-950/80 px-1.5 text-xs text-zinc-200";
+const COMPACT_DATE_BADGE =
+  "inline-flex h-7 w-[7rem] min-w-[7rem] max-w-[7rem] shrink-0 items-center justify-center truncate rounded-md border border-zinc-700/80 bg-zinc-950/80 px-1.5 text-xs text-zinc-200";
+const COMPACT_PRIORITY_BADGE =
+  "inline-flex h-7 w-[5.75rem] min-w-[5.75rem] max-w-[5.75rem] shrink-0 items-center justify-center truncate rounded-md border border-zinc-700/80 bg-zinc-950/80 px-1.5 text-xs text-zinc-200";
+const COMPACT_STATUS_SELECT =
+  "h-7 w-[7rem] min-w-[7rem] max-w-[7rem] shrink-0 truncate rounded-full border bg-zinc-900 px-2 text-xs font-medium text-zinc-100 outline-none transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-offset-zinc-900";
+
 export default function WorkReportsPage() {
   const [currentRole, setCurrentRole] = useState<AppRole>("employee");
   const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
@@ -401,6 +313,11 @@ export default function WorkReportsPage() {
   const [savingInlineFields, setSavingInlineFields] = useState<Record<string, boolean>>({});
   const [showUnfinishedConfirm, setShowUnfinishedConfirm] = useState(false);
   const [unfinishedDraftCount, setUnfinishedDraftCount] = useState(0);
+  const [ownEmployeeId, setOwnEmployeeId] = useState<string | null>(null);
+  const [deleteConfirmRowId, setDeleteConfirmRowId] = useState<string | null>(null);
+  const [isDeletingRow, setIsDeletingRow] = useState(false);
+  const [viewRowId, setViewRowId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; variant: "success" | "error" } | null>(null);
   const [spendClientId, setSpendClientId] = useState("");
   const [metaAdsServiceId, setMetaAdsServiceId] = useState<string | null>(null);
   const [googleAdsServiceId, setGoogleAdsServiceId] = useState<string | null>(null);
@@ -462,6 +379,7 @@ export default function WorkReportsPage() {
       }
       const selfEmployeeId = selfRow?.id ? String(selfRow.id) : null;
       setCurrentRole(resolveAppRole(selfRow?.app_role));
+      setOwnEmployeeId(selfEmployeeId);
 
       if (selfEmployeeId) {
         setEmployeeId(selfEmployeeId);
@@ -614,6 +532,55 @@ export default function WorkReportsPage() {
   const employeeById = useMemo(() => new Map(employeeOptions.map((item) => [item.id, item.name])), [employeeOptions]);
   const selectedEmployeeName = employeeId ? employeeById.get(employeeId) ?? "—" : "—";
 
+  const buildItemDetail = useCallback(
+    (row: WorkItem): WorkReportItemDetail => {
+      const clientName = row.clientId ? clientById.get(row.clientId) ?? "—" : "—";
+      const serviceName = row.serviceId ? serviceById.get(row.serviceId) ?? "—" : "—";
+      const taskName = row.taskDescription?.trim() || (row.taskId ? taskById.get(row.taskId) ?? "—" : "—");
+      const taskEditText =
+        row.taskDescription?.trim() || (row.taskId ? taskById.get(row.taskId) ?? "" : "");
+      const status = validTaskStatus(row.taskStatus);
+      const updatedAtRaw = row.raw.updated_at ?? row.raw.updatedAt;
+      const start = row.startDate ?? "";
+      const end = row.endDate && row.endDate !== row.startDate ? row.endDate : "";
+      const priority =
+        row.priority != null && PRIORITY_VALUES.has(row.priority) ? row.priority : "normal";
+
+      return {
+        id: row.id,
+        clientName,
+        serviceName,
+        taskDescription: taskName,
+        notes: row.notes,
+        hoursLabel: `${formatHours(row.hours)} ч`,
+        dateLabel: formatDateRangeDisplay(row.startDate, row.endDate) ?? "—",
+        priorityLabel: priorityLabel(row.priority),
+        statusLabel: TASK_STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status,
+        statusClassName: taskStatusClasses(status),
+        employeeName: selectedEmployeeName,
+        createdAtLabel: formatDateTimeDisplay(row.raw.created_at),
+        updatedAtLabel: formatDateTimeDisplay(updatedAtRaw),
+        editValues: {
+          clientId: row.clientId ?? "",
+          serviceId: row.serviceId ?? "",
+          taskDescription: taskEditText,
+          notes: row.notes,
+          hours: String(row.hours),
+          dateValue: { start, end },
+          priority,
+          taskStatus: status,
+        },
+      };
+    },
+    [clientById, serviceById, taskById, selectedEmployeeName]
+  );
+
+  const viewRowDetail = useMemo(() => {
+    if (!viewRowId) return null;
+    const row = rows.find((item) => item.id === viewRowId);
+    return row ? buildItemDetail(row) : null;
+  }, [buildItemDetail, rows, viewRowId]);
+
   const employeeSelectOptions = useMemo<SelectOption[]>(
     () => employeeOptions.map((employee) => ({ value: employee.id, label: employee.name })),
     [employeeOptions]
@@ -630,6 +597,10 @@ export default function WorkReportsPage() {
     () => PRIORITY_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
     []
   );
+  const taskStatusSelectOptions = useMemo<SelectOption[]>(
+    () => TASK_STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+    []
+  );
   const draftStatusFilterOptions = useMemo<SelectOption[]>(
     () => [{ value: "", label: "Всички статуси" }, ...TASK_STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label }))],
     []
@@ -639,7 +610,7 @@ export default function WorkReportsPage() {
     [clients]
   );
   const draftFilterSelectClasses =
-    "min-w-[180px] rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition-colors focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/40";
+    "w-full min-w-0 max-w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition-colors focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/40 sm:max-w-[200px]";
 
   const draftRows = useMemo(() => rows.filter((row) => row.status === "draft"), [rows]);
   const sentRows = useMemo(() => rows.filter((row) => row.status === "sent"), [rows]);
@@ -1016,6 +987,138 @@ export default function WorkReportsPage() {
     void handleSendAndLock();
   };
 
+  const canEditDraftRow = useCallback(
+    (row: WorkItem) =>
+      row.status === "draft" &&
+      monthState.isEditable &&
+      (currentRole === "admin" || (ownEmployeeId != null && employeeId === ownEmployeeId)),
+    [monthState.isEditable, currentRole, ownEmployeeId, employeeId]
+  );
+
+  const canDeleteDraftRow = canEditDraftRow;
+
+  const handleSaveModalItem = useCallback(
+    async (values: WorkReportItemEditValues): Promise<{ ok: true } | { ok: false; message: string }> => {
+      const row = viewRowId ? rows.find((item) => item.id === viewRowId) : null;
+      if (!row || !canEditDraftRow(row)) {
+        return { ok: false, message: "Редакцията не е позволена за тази задача." };
+      }
+
+      if (!values.clientId || !values.serviceId || !values.taskDescription.trim()) {
+        return { ok: false, message: "Моля, попълнете клиент, услуга и задача." };
+      }
+
+      const parsedHours = Number(values.hours);
+      if (!Number.isFinite(parsedHours) || parsedHours < 0) {
+        return { ok: false, message: "Въведете валидни часове (число >= 0)." };
+      }
+
+      const start = values.dateValue.start.trim() || null;
+      const end = values.dateValue.end.trim() || null;
+      const startDate = start;
+      const endDate = end && end !== start ? end : null;
+      const taskStatus = validTaskStatus(values.taskStatus);
+
+      const payload = {
+        client_id: values.clientId,
+        service_id: values.serviceId,
+        task_description: values.taskDescription.trim(),
+        notes: values.notes.trim() || null,
+        hours: parsedHours,
+        start_date: startDate,
+        end_date: endDate,
+        priority: normalizePriority(values.priority),
+        task_status: taskStatus,
+      };
+
+      const result = await supabase.from("work_report_items").update(payload).eq("id", row.id);
+      if (result.error) {
+        const message = `Не успяхме да запазим промените. ${result.error.message}`;
+        setToast({ message, variant: "error" });
+        return { ok: false, message };
+      }
+
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === row.id
+            ? {
+                ...r,
+                clientId: values.clientId,
+                serviceId: values.serviceId,
+                taskDescription: values.taskDescription.trim(),
+                notes: values.notes,
+                hours: parsedHours,
+                startDate,
+                endDate,
+                priority: payload.priority != null ? String(payload.priority) : null,
+                taskStatus,
+                raw: { ...r.raw, ...payload },
+              }
+            : r
+        )
+      );
+
+      setDraftEdits((prev) => {
+        const next = { ...prev };
+        delete next[row.id];
+        return next;
+      });
+
+      setToast({ message: "Промените са запазени.", variant: "success" });
+      return { ok: true };
+    },
+    [rows, viewRowId, canEditDraftRow]
+  );
+
+  const viewRow = useMemo(
+    () => (viewRowId ? rows.find((item) => item.id === viewRowId) ?? null : null),
+    [rows, viewRowId]
+  );
+  const viewRowCanEdit = viewRow ? canEditDraftRow(viewRow) : false;
+
+  const handleRequestDeleteDraftRow = (row: WorkItem) => {
+    if (!canDeleteDraftRow(row)) return;
+    setErrorMessage("");
+    setDeleteConfirmRowId(row.id);
+  };
+
+  const handleConfirmDeleteDraftRow = async () => {
+    if (!deleteConfirmRowId) return;
+
+    const row = rows.find((item) => item.id === deleteConfirmRowId);
+    if (!row || !canDeleteDraftRow(row)) {
+      setDeleteConfirmRowId(null);
+      return;
+    }
+
+    setIsDeletingRow(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    const result = await supabase.from("work_report_items").delete().eq("id", row.id);
+    if (result.error) {
+      setToast({ message: `Не успяхме да изтрием задачата. ${result.error.message}`, variant: "error" });
+      setIsDeletingRow(false);
+      return;
+    }
+
+    setRows((prev) => prev.filter((item) => item.id !== row.id));
+    setDraftEdits((prev) => {
+      const next = { ...prev };
+      delete next[row.id];
+      return next;
+    });
+    if (editingField?.rowId === row.id) {
+      setEditingField(null);
+    }
+    if (viewRowId === row.id) {
+      setViewRowId(null);
+    }
+    setDeleteConfirmRowId(null);
+    setToast({ message: "Задачата е изтрита.", variant: "success" });
+    setIsDeletingRow(false);
+  };
+
   const handleAdminUnlockMonth = async () => {
     if (currentRole !== "admin" || !monthlyReportId) return;
     setIsSaving(true);
@@ -1077,21 +1180,26 @@ export default function WorkReportsPage() {
     return (
       <div
         key={row.id}
-        className={`rounded-2xl border p-5 ${taskStatusRowClasses(status)}`}
+        className={`min-w-0 overflow-hidden rounded-2xl border p-4 sm:p-5 ${taskStatusRowClasses(status)}`}
       >
-        {/* Row 1: Primary content — Client, Service, Task (wrap naturally, never truncate) */}
-        <div className="flex flex-wrap gap-x-6 gap-y-3 text-zinc-300">
-          <div className="min-w-0 flex-1 basis-0">
+<div className="grid grid-cols-1 gap-3 text-zinc-300 sm:grid-cols-3 sm:gap-4">
+          <div className={DRAFT_COMPACT_CELL}>
             <p className={labelClass}>Клиент</p>
-            <p className="mt-0.5 text-sm font-medium leading-relaxed text-zinc-100 break-words">{clientName}</p>
+            <p className="mt-0.5 truncate text-sm font-medium text-zinc-100" title={clientName}>
+              {clientName}
+            </p>
           </div>
-          <div className="min-w-0 flex-1 basis-0">
+          <div className={DRAFT_COMPACT_CELL}>
             <p className={labelClass}>Услуга</p>
-            <p className="mt-0.5 text-sm font-medium leading-relaxed text-zinc-100 break-words">{serviceName}</p>
+            <p className="mt-0.5 truncate text-sm font-medium text-zinc-100" title={serviceName}>
+              {serviceName}
+            </p>
           </div>
-          <div className="min-w-0 flex-1 basis-0">
+          <div className={DRAFT_COMPACT_CELL}>
             <p className={labelClass}>Задача</p>
-            <p className="mt-0.5 text-sm font-medium leading-relaxed text-zinc-100 break-words">{taskName}</p>
+            <p className="mt-0.5 truncate text-sm font-medium text-zinc-100" title={taskName}>
+              {taskName}
+            </p>
           </div>
         </div>
 
@@ -1338,38 +1446,62 @@ export default function WorkReportsPage() {
     const isPrioritySaving = Boolean(savingInlineFields[`${row.id}:priority`]);
     const isNotesSaving = Boolean(savingInlineFields[`${row.id}:notes`]);
     const dateLabel = formatDateRangeDisplay(row.startDate, row.endDate);
-
-    const compactBadgeBase =
-      "inline-flex items-center rounded-md border border-zinc-700/80 bg-zinc-950/80 px-2 py-0.5 text-xs text-zinc-200";
+    const mobileLabelClass = "text-[10px] font-medium uppercase tracking-wide text-zinc-500 lg:hidden";
+    const openRowDetail = () => setViewRowId(row.id);
 
     return (
-      <div key={row.id} className="group">
+      <div key={row.id} className="group min-w-0">
         <div
-          className={`rounded-xl border px-3 py-2.5 transition-colors duration-150 hover:border-zinc-600 hover:bg-zinc-800/60 ${taskStatusRowClasses(
+          role="button"
+          tabIndex={0}
+          onClick={openRowDetail}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              openRowDetail();
+            }
+          }}
+          className={`min-w-0 cursor-pointer overflow-hidden rounded-xl border px-3 py-3 transition-colors duration-150 hover:border-zinc-600 hover:bg-zinc-800/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50 lg:min-h-[3.75rem] lg:py-2.5 ${taskStatusRowClasses(
             status
           )}`}
         >
-          <div className="flex flex-col gap-2.5 md:grid md:min-h-[64px] md:grid-cols-[minmax(130px,1fr)_minmax(130px,1fr)_minmax(190px,1.2fr)_80px_120px_110px_130px_86px] md:items-center md:gap-2">
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Клиент</p>
-              <p className="truncate text-sm text-zinc-100">{clientName}</p>
+          <div className={`flex flex-col gap-3 ${DRAFT_LIST_GRID_CLASS}`}>
+            <div className={DRAFT_COMPACT_CELL}>
+              <p className={mobileLabelClass}>Клиент</p>
+              <p className="truncate text-sm text-zinc-100" title={clientName}>
+                {clientName}
+              </p>
             </div>
 
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Услуга</p>
-              <p className="truncate text-sm text-zinc-200">{serviceName}</p>
+            <div className={DRAFT_COMPACT_CELL}>
+              <p className={mobileLabelClass}>Услуга</p>
+              <p className="truncate text-sm text-zinc-200" title={serviceName}>
+                {serviceName}
+              </p>
             </div>
 
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Задача</p>
-              <p className="truncate text-sm font-medium text-zinc-100">{taskName}</p>
-              <p className="truncate text-xs text-zinc-400">{row.notes || "Без бележки"}</p>
+            <div className={DRAFT_COMPACT_CELL}>
+              <p className={mobileLabelClass}>Задача</p>
+              <p className="truncate text-sm font-medium text-zinc-100" title={taskName}>
+                {taskName}
+              </p>
+              <button
+                type="button"
+                onClick={(event) => {
+                  stopRowEvent(event);
+                  startEditingField(row, "notes");
+                }}
+                className="block w-full truncate text-left text-xs text-zinc-400 hover:text-zinc-200 hover:underline"
+                title={row.notes || "Редактирай бележка"}
+              >
+                {row.notes || "Без бележки"}
+              </button>
             </div>
 
-            <div>
-              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Часове</p>
+                        <div className={DRAFT_META_CELL} onClick={stopRowEvent}>
+              <p className={mobileLabelClass}>Часове</p>
               {isEditingHours ? (
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1" onClick={stopRowEvent} onKeyDown={stopRowEvent}>
                   <input
                     autoFocus
                     type="number"
@@ -1388,11 +1520,11 @@ export default function WorkReportsPage() {
                       }
                     }}
                     disabled={isHoursSaving}
-                    className="w-16 rounded-md border border-zinc-600/70 bg-zinc-900 px-2 py-1 text-xs text-zinc-100 outline-none focus:border-sky-400/40 focus:ring-1 focus:ring-sky-400/20 disabled:opacity-60"
+                    className="w-[4.25rem] rounded-md border border-zinc-600/70 bg-zinc-900 px-2 py-1 text-xs text-zinc-100 outline-none focus:border-sky-400/40 focus:ring-1 focus:ring-sky-400/20 disabled:opacity-60"
                   />
                   <button
                     type="button"
-                    onClick={() => void handleSaveDraftField(row, "hours")}
+                    onClick={(event) => { stopRowEvent(event); void handleSaveDraftField(row, "hours"); }}
                     disabled={isHoursSaving}
                     className="rounded bg-sky-500/80 px-1.5 py-1 text-[10px] font-medium text-white hover:bg-sky-500 disabled:opacity-60"
                   >
@@ -1402,8 +1534,8 @@ export default function WorkReportsPage() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => startEditingField(row, "hours")}
-                  className={`${compactBadgeBase} hover:border-zinc-500/80 hover:bg-zinc-900`}
+                  onClick={(event) => { stopRowEvent(event); startEditingField(row, "hours"); }}
+                  className={`${COMPACT_HOURS_BADGE} cursor-text hover:border-zinc-500/80 hover:bg-zinc-900`}
                   title="Клик за редакция"
                 >
                   {formatHours(row.hours)} ч
@@ -1411,20 +1543,23 @@ export default function WorkReportsPage() {
               )}
             </div>
 
-            <div>
-              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Дата</p>
+            <div className={DRAFT_META_CELL} onClick={stopRowEvent}>
+              <p className={mobileLabelClass}>Дата</p>
               {isEditingDate ? (
-                <div className="space-y-1.5">
-                  <DatePicker
-                    value={draftEdit.dateValue}
-                    onChange={(v) => handleDraftDateChange(row, v)}
-                    placeholder="Избери дата"
-                    locale="bg-BG"
-                  />
-                  <div className="flex items-center gap-1">
+                <div className="min-w-0 max-w-full space-y-1.5" onClick={stopRowEvent}>
+                  <div className="min-w-0 max-w-[6.75rem]">
+                    <DatePicker
+                      value={draftEdit.dateValue}
+                      onChange={(v) => handleDraftDateChange(row, v)}
+                      placeholder="Избери дата"
+                      locale="bg-BG"
+                      className="w-full min-w-0"
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1">
                     <button
                       type="button"
-                      onClick={() => void handleSaveDraftField(row, "date")}
+                      onClick={(event) => { stopRowEvent(event); void handleSaveDraftField(row, "date"); }}
                       disabled={isDateSaving}
                       className="rounded bg-sky-500/80 px-1.5 py-0.5 text-[10px] font-medium text-white hover:bg-sky-500 disabled:opacity-60"
                     >
@@ -1432,7 +1567,7 @@ export default function WorkReportsPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => cancelEditingField(row)}
+                      onClick={(event) => { stopRowEvent(event); cancelEditingField(row); }}
                       className="rounded border border-zinc-600 px-1.5 py-0.5 text-[10px] text-zinc-400 hover:bg-zinc-700/50"
                     >
                       Отказ
@@ -1442,22 +1577,24 @@ export default function WorkReportsPage() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => startEditingField(row, "date")}
-                  className={`${compactBadgeBase} max-w-full truncate hover:border-zinc-500/80 hover:bg-zinc-900`}
-                  title="Клик за редакция"
+                  onClick={(event) => { stopRowEvent(event); startEditingField(row, "date"); }}
+                  className={`${COMPACT_DATE_BADGE} cursor-text hover:border-zinc-500/80 hover:bg-zinc-900`}
+                  title={dateLabel ?? "Клик за редакция"}
                 >
                   {dateLabel ?? "Избери"}
                 </button>
               )}
             </div>
 
-            <div>
-              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Приоритет</p>
+            <div className={DRAFT_META_CELL} onClick={stopRowEvent}>
+              <p className={mobileLabelClass}>Приоритет</p>
               {isEditingPriority ? (
                 <select
                   autoFocus
                   value={draftEdit.priority}
+                  onClick={stopRowEvent}
                   onChange={(e) => {
+                    stopRowEvent(e);
                     const newPriority = e.target.value;
                     handleDraftPriorityChange(row, newPriority);
                     void handleSaveDraftField(row, "priority", newPriority);
@@ -1469,7 +1606,7 @@ export default function WorkReportsPage() {
                     }
                   }}
                   disabled={isPrioritySaving}
-                  className="w-full rounded-md border border-zinc-600/70 bg-zinc-900 px-2 py-1 text-xs text-zinc-100 outline-none focus:border-sky-400/40 focus:ring-1 focus:ring-sky-400/20 disabled:opacity-60"
+                  className={`${COMPACT_PRIORITY_BADGE} bg-zinc-900 outline-none focus:border-sky-400/40 focus:ring-1 focus:ring-sky-400/20 disabled:opacity-60`}
                 >
                   <option value="">Без приоритет</option>
                   {PRIORITY_OPTIONS.map((o) => (
@@ -1481,8 +1618,8 @@ export default function WorkReportsPage() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => startEditingField(row, "priority")}
-                  className={`${compactBadgeBase} hover:border-zinc-500/80 hover:bg-zinc-900`}
+                  onClick={(event) => { stopRowEvent(event); startEditingField(row, "priority"); }}
+                  className={`${COMPACT_PRIORITY_BADGE} cursor-text hover:border-zinc-500/80 hover:bg-zinc-900`}
                   title="Клик за редакция"
                 >
                   {row.priority != null && PRIORITY_VALUES.has(row.priority)
@@ -1492,14 +1629,13 @@ export default function WorkReportsPage() {
               )}
             </div>
 
-            <div>
-              <p className="text-[10px] uppercase tracking-wide text-zinc-500 md:hidden">Статус</p>
+            <div className={DRAFT_META_CELL} onClick={stopRowEvent}>
+              <p className={mobileLabelClass}>Статус</p>
               <select
                 value={status}
-                onChange={(e) => handleTaskStatusChange(row.id, e.target.value)}
-                className={`w-full rounded-full border bg-zinc-900 px-2 py-1 text-xs font-medium text-zinc-100 outline-none transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-offset-zinc-900 ${taskStatusClasses(
-                  status
-                )}`}
+                onClick={stopRowEvent}
+                onChange={(e) => { stopRowEvent(e); handleTaskStatusChange(row.id, e.target.value); }}
+                className={`${COMPACT_STATUS_SELECT} ${taskStatusClasses(status)}`}
               >
                 {TASK_STATUS_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value} className="bg-zinc-900 text-zinc-100">
@@ -1509,21 +1645,26 @@ export default function WorkReportsPage() {
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5 md:justify-end">
+            <div className={`${DRAFT_META_CELL} flex items-center justify-end gap-0.5`} onClick={stopRowEvent}>
               <button
                 type="button"
-                onClick={() => startEditingField(row, "notes")}
-                className="rounded-md border border-zinc-700 bg-zinc-900/80 px-2 py-1 text-xs text-zinc-300 transition-colors hover:border-zinc-500 hover:bg-zinc-800"
+                onClick={() => setViewRowId(row.id)}
+                className={DRAFT_ROW_ICON_BTN}
+                title="Преглед на задача"
+                aria-label="Преглед на задача"
               >
-                Бележка
+                <EyeIcon />
               </button>
-              {isEditingHours || isEditingDate || isEditingPriority ? (
+              {canDeleteDraftRow(row) ? (
                 <button
                   type="button"
-                  onClick={() => cancelEditingField(row)}
-                  className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-800/70"
+                  onClick={() => handleRequestDeleteDraftRow(row)}
+                  disabled={isDeletingRow}
+                  className={`${DRAFT_ROW_ICON_BTN} hover:border-rose-800/50 hover:bg-rose-950/40 hover:text-rose-300`}
+                  title="Изтрий задача"
+                  aria-label="Изтрий задача"
                 >
-                  Отказ
+                  <TrashIcon />
                 </button>
               ) : null}
             </div>
@@ -1531,7 +1672,7 @@ export default function WorkReportsPage() {
         </div>
 
         {isEditingNotes && (
-          <div className="mt-2 rounded-lg border border-zinc-800 bg-zinc-950/90 p-3">
+          <div className="mt-2 min-w-0 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/90 p-3">
             <textarea
               autoFocus
               rows={3}
@@ -1545,7 +1686,7 @@ export default function WorkReportsPage() {
               }}
               disabled={isNotesSaving}
               placeholder="Бележка"
-              className="w-full resize-y rounded-md border border-zinc-700/70 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100 outline-none transition-colors focus:border-sky-400/40 focus:ring-2 focus:ring-sky-400/20 disabled:opacity-60"
+              className="w-full min-w-0 resize-y rounded-md border border-zinc-700/70 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100 outline-none transition-colors focus:border-sky-400/40 focus:ring-2 focus:ring-sky-400/20 disabled:opacity-60"
             />
             <div className="mt-2 flex gap-2">
               <button
@@ -1558,7 +1699,7 @@ export default function WorkReportsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => cancelEditingField(row)}
+                onClick={(event) => { stopRowEvent(event); cancelEditingField(row); }}
                 className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-300 transition hover:bg-zinc-800/60"
               >
                 Отказ
@@ -1571,8 +1712,8 @@ export default function WorkReportsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <section className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-100 shadow-xl md:p-6">
+    <div className="flex min-w-0 max-w-full flex-col gap-4 overflow-x-hidden">
+      <section className="min-w-0 overflow-x-hidden rounded-3xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-100 shadow-xl md:p-6">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold text-white">Отчет за месец</h1>
@@ -1602,7 +1743,7 @@ export default function WorkReportsPage() {
                   value={employeeId ?? ""}
                   onChange={(nextEmployeeId) => setEmployeeId(nextEmployeeId || null)}
                   options={employeeSelectOptions}
-                  className="md:min-w-[220px]"
+                  className="w-full min-w-0 max-w-full"
                 />
               </div>
             )}
@@ -1623,8 +1764,8 @@ export default function WorkReportsPage() {
         )}
 
         {!isLoading && !errorMessage && (
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
-            <div className="space-y-3 xl:col-span-2">
+          <div className="grid min-w-0 grid-cols-1 gap-3 xl:grid-cols-3">
+            <div className="min-w-0 space-y-3 xl:col-span-2">
               <article className="overflow-visible rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
                 <h2 className="text-base font-semibold text-white">Рекламен бюджет за месеца</h2>
                 <p className="mt-1 text-sm text-zinc-500">{monthLabel(monthValue)}</p>
@@ -1694,11 +1835,7 @@ export default function WorkReportsPage() {
                     Този месец е със статус „{monthStatusLabel(monthState)}“ и не може да се редактира.
                   </p>
                 )}
-                <form
-                  onSubmit={handleAddRow}
-                  className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2"
-                  aria-disabled={!monthState.isEditable}
-                >
+                <form onSubmit={handleAddRow} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                   <fieldset disabled={!monthState.isEditable || isSaving} className="contents">
                   <label className="relative overflow-visible flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Клиент</span>
@@ -1799,25 +1936,21 @@ export default function WorkReportsPage() {
                 </div>
               )}
 
-              <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+              <article className="min-w-0 overflow-x-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
                 <h3 className="text-base font-semibold text-white">Чернова (неизпратено)</h3>
                 <p className="mt-1 text-sm text-zinc-500">Текущ месец: {monthLabel(monthValue)}</p>
-                <div className="sticky top-0 z-10 mt-3 flex flex-wrap gap-3 overflow-visible rounded-lg border border-zinc-800 bg-zinc-900/95 p-2 backdrop-blur">
-                  <label className="flex flex-col gap-1">
+                <div className="mt-3 flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/95 p-2 sm:flex-row sm:flex-wrap">
+                  <label className="relative flex min-w-0 flex-1 flex-col gap-1 overflow-visible sm:min-w-[140px] sm:max-w-[220px]">
                     <span className="text-xs text-zinc-500">Клиент</span>
-                    <select
+                    <CustomSelect
                       value={draftClientFilter}
-                      onChange={(event) => setDraftClientFilter(event.target.value)}
-                      className={draftFilterSelectClasses}
-                    >
-                      {clientFilterOptions.map((option) => (
-                        <option key={option.value || "all-clients"} value={option.value} className="bg-zinc-900 text-zinc-100">
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(next) => setDraftClientFilter(next)}
+                      options={clientFilterOptions}
+                      className="w-full min-w-0 max-w-full"
+                      buttonClassName={`${draftFilterSelectClasses} justify-between`}
+                    />
                   </label>
-                  <label className="flex flex-col gap-1">
+                  <label className="flex min-w-0 flex-1 flex-col gap-1 sm:min-w-[140px] sm:max-w-[220px]">
                     <span className="text-xs text-zinc-500">Статус</span>
                     <select
                       value={draftStatusFilter}
@@ -1832,7 +1965,7 @@ export default function WorkReportsPage() {
                     </select>
                   </label>
                 </div>
-                <div className="mt-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-2">
+                <div className="mt-3 min-w-0 overflow-x-hidden rounded-xl border border-zinc-800 bg-zinc-950/70 p-2">
                   {filteredDraftRows.length === 0 && (
                     <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-500">
                       {draftRows.length === 0
@@ -1841,8 +1974,10 @@ export default function WorkReportsPage() {
                     </div>
                   )}
                   {filteredDraftRows.length > 0 && (
-                    <div className="max-h-[620px] space-y-2 overflow-y-auto pr-1">
-                      <div className="sticky top-0 z-10 hidden grid-cols-[minmax(130px,1fr)_minmax(130px,1fr)_minmax(190px,1.2fr)_80px_120px_110px_130px_86px] gap-2 rounded-md border border-zinc-800 bg-zinc-900/95 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 backdrop-blur md:grid">
+                    <div className="space-y-2">
+                      <div
+                        className={`rounded-md border border-zinc-800 bg-zinc-900/95 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 ${DRAFT_LIST_HEADER_CLASS}`}
+                      >
                         <span>Клиент</span>
                         <span>Услуга</span>
                         <span>Задача</span>
@@ -1873,7 +2008,7 @@ export default function WorkReportsPage() {
               </article>
             </div>
 
-            <aside className="space-y-3">
+            <aside className="min-w-0 space-y-3">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Обобщение</h2>
 
@@ -1993,7 +2128,52 @@ export default function WorkReportsPage() {
         )}
       </section>
 
-      {showUnfinishedConfirm && (
+
+      <WorkReportItemDetailModal
+        isOpen={viewRowId != null && viewRowDetail != null}
+        onClose={() => setViewRowId(null)}
+        item={viewRowDetail}
+        canEdit={viewRowCanEdit}
+        clientOptions={clientSelectOptions}
+        serviceOptions={serviceSelectOptions}
+        priorityOptions={prioritySelectOptions}
+        statusOptions={taskStatusSelectOptions}
+        statusClassNameFor={taskStatusClasses}
+        onSave={handleSaveModalItem}
+      />
+
+      {toast && (
+        <Toast message={toast.message} variant={toast.variant} onDismiss={() => setToast(null)} />
+      )}
+
+      {deleteConfirmRowId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+<div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold text-white">Изтриване на задача</h2>
+            <p className="mt-3 text-sm text-zinc-300">Сигурни ли сте, че искате да изтриете тази задача?</p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmRowId(null)}
+                disabled={isDeletingRow}
+                className="inline-flex justify-center rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-zinc-800 disabled:opacity-60"
+              >
+                Отказ
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmDeleteDraftRow()}
+                disabled={isDeletingRow}
+                className="inline-flex justify-center rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-rose-500 disabled:opacity-60"
+              >
+                {isDeletingRow ? "Изтриване..." : "Изтрий"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+            {showUnfinishedConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
             <h2 className="text-lg font-semibold text-white">Има незавършени задачи</h2>

@@ -140,7 +140,7 @@ export default function Sidebar({ initialRole }: SidebarProps) {
   );
 
   return (
-    <aside className="relative flex h-screen w-56 shrink-0 flex-col overflow-hidden border-r border-white/10 bg-[#0d0f12]/95 px-3 py-4 text-slate-200 backdrop-blur-xl">
+    <aside className="sticky top-0 flex h-screen min-h-screen w-56 shrink-0 flex-col overflow-hidden border-r border-white/10 bg-[#0d0f12]/95 px-3 py-4 text-slate-200 backdrop-blur-xl">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/18 to-transparent"
@@ -197,7 +197,7 @@ export default function Sidebar({ initialRole }: SidebarProps) {
         })}
       </nav>
 
-      <div className="mt-4 border-t border-white/10 pt-3">
+      <div className="mt-auto shrink-0 border-t border-white/10 pt-3">
         <p className="text-[11px] text-slate-400">Brainspot internal system</p>
       </div>
     </aside>

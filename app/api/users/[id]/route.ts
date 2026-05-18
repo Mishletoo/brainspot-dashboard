@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { ensureAdminContext, formatPostgrestError, getRoleFromRequest } from "../_shared";
+import {
+  ensureAdminContext,
+  formatPostgrestError,
+  getRoleFromRequest,
+  isMissingIsActiveColumnError,
+} from "../_shared";
 
 type UsersPatchBody = {
   role?: unknown;
   isActive?: unknown;
 };
-
-function isMissingIsActiveColumnError(error: { message?: string } | null) {
-  if (!error?.message) return false;
-  const message = error.message.toLowerCase();
-  return message.includes("is_active") && message.includes("column");
-}
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
@@ -129,11 +128,68 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 }
 
 export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> }) {
-  const { id } = await context.params;
-  return NextResponse.json(
-    {
-      error: `Deleting users is disabled for safety. Deactivate account ${id} instead.`,
-    },
-    { status: 405 },
-  );
+  try {
+    const auth = await ensureAdminContext();
+    if (!auth.ok) return auth.response;
+
+    const { id } = await context.params;
+    if (!id) {
+      return NextResponse.json({ error: "Missing user id." }, { status: 400 });
+    }
+
+    if (id === auth.currentUserId) {
+      return NextResponse.json(
+        { error: "Не можете да изтриете собствения си admin акаунт." },
+        { status: 400 },
+      );
+    }
+
+    const { data: authUserData, error: authUserError } = await auth.adminClient.auth.admin.getUserById(id);
+    if (authUserError || !authUserData.user) {
+      return NextResponse.json(
+        { error: authUserError?.message || "Auth user not found." },
+        { status: 404 },
+      );
+    }
+
+    const unlinkPayload: Record<string, unknown> = { auth_user_id: null, is_active: false };
+    const { error: unlinkError } = await auth.adminClient
+      .from("employees")
+      .update(unlinkPayload)
+      .eq("auth_user_id", id);
+
+    if (unlinkError) {
+      if (isMissingIsActiveColumnError(unlinkError)) {
+        const { error: fallbackUnlinkError } = await auth.adminClient
+          .from("employees")
+          .update({ auth_user_id: null })
+          .eq("auth_user_id", id);
+
+        if (fallbackUnlinkError) {
+          return NextResponse.json(
+            { error: formatPostgrestError(fallbackUnlinkError, "Could not unlink employee record.") },
+            { status: 500 },
+          );
+        }
+      } else {
+        return NextResponse.json(
+          { error: formatPostgrestError(unlinkError, "Could not unlink employee record.") },
+          { status: 500 },
+        );
+      }
+    }
+
+    const { error: deleteAuthError } = await auth.adminClient.auth.admin.deleteUser(id);
+    if (deleteAuthError) {
+      return NextResponse.json(
+        { error: deleteAuthError.message || "Could not delete auth user." },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unexpected server error.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

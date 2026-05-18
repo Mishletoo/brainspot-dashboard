@@ -16,10 +16,12 @@ export default function DashboardShell({ initialRole, children }: DashboardShell
   const shouldShowRail = useMemo(() => !pathname.startsWith("/work-reports"), [pathname]);
 
   return (
-    <div className="flex min-h-screen overflow-x-hidden">
+    <div className="flex h-screen min-h-0 overflow-hidden">
       <Sidebar initialRole={initialRole} />
-      <div className="flex min-w-0 flex-1 overflow-x-hidden">
-        <main className="min-w-0 flex-1 overflow-x-hidden p-8">{children}</main>
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+        <main className="bs-scroll-fade min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 lg:p-8">
+          {children}
+        </main>
         {shouldShowRail && <TasksRail />}
       </div>
     </div>
