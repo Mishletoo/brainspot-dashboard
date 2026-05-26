@@ -16,6 +16,26 @@ type EmployeeProfile = {
   photo_url: string | null;
 };
 
+function normalizeDateForInput(value: string | null): string {
+  if (!value) return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  const candidate = trimmed.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(candidate)) return "";
+  const parsed = new Date(`${candidate}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return candidate;
+}
+
+function normalizeDateForSave(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
+  const parsed = new Date(`${trimmed}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return trimmed;
+}
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
   const [phone, setPhone] = useState("");
@@ -62,7 +82,7 @@ export default function ProfilePage() {
 
       setProfile(data);
       setPhone(data.phone ?? "");
-      setBirthDate(data.birth_date ?? "");
+      setBirthDate(normalizeDateForInput(data.birth_date));
       setPhotoUrl(data.photo_url ?? "");
       setIsLoading(false);
     };
@@ -78,9 +98,16 @@ export default function ProfilePage() {
     setSuccessMessage("");
     setIsSaving(true);
 
+    const normalizedBirthDate = normalizeDateForSave(birthDate);
+    if (birthDate.trim() !== "" && normalizedBirthDate === null) {
+      setErrorMessage("Невалидна дата. Моля, използвайте формат YYYY-MM-DD.");
+      setIsSaving(false);
+      return;
+    }
+
     const { error } = await supabase.rpc("update_employee_profile", {
       p_phone: phone.trim() === "" ? null : phone.trim(),
-      p_birth_date: birthDate.trim() === "" ? null : birthDate.trim(),
+      p_birth_date: normalizedBirthDate,
       p_photo_url: photoUrl.trim() === "" ? null : photoUrl.trim(),
     });
 

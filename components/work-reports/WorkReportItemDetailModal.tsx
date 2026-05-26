@@ -69,6 +69,29 @@ function editValuesEqual(a: WorkReportItemEditValues, b: WorkReportItemEditValue
   );
 }
 
+function parseHoursInput(rawValue: string): { value: number | null; error: string | null } {
+  const trimmed = rawValue.trim();
+  if (!trimmed) {
+    return { value: null, error: "Часовете са задължителни." };
+  }
+
+  const normalized = trimmed.replace(",", ".");
+  if (!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(normalized)) {
+    return { value: null, error: "Невалиден формат за часове. Използвайте число, напр. 2, 2.5, 0.5." };
+  }
+
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) {
+    return { value: null, error: "Невалидни часове." };
+  }
+
+  if (parsed < 0) {
+    return { value: null, error: "Часовете не могат да бъдат отрицателни." };
+  }
+
+  return { value: parsed, error: null };
+}
+
 const fieldInputClass =
   "w-full min-w-0 rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition-colors focus:border-zinc-500";
 const fieldLabelClass = "text-[11px] font-medium uppercase tracking-wider text-zinc-500";
@@ -187,8 +210,10 @@ export function WorkReportItemDetailModal({
     if (!values.clientId) return "Изберете клиент.";
     if (!values.serviceId) return "Изберете услуга.";
     if (!values.taskDescription.trim()) return "Попълнете описание на задачата.";
-    const parsedHours = Number(values.hours);
-    if (!Number.isFinite(parsedHours) || parsedHours < 0) return "Въведете валидни часове (число >= 0).";
+    const parsedHoursResult = parseHoursInput(values.hours);
+    if (parsedHoursResult.error || parsedHoursResult.value == null) {
+      return parsedHoursResult.error ?? "Въведете валидни часове (число >= 0).";
+    }
     return null;
   };
 
@@ -303,9 +328,8 @@ export function WorkReportItemDetailModal({
               <label className="flex min-w-0 flex-col gap-1">
                 <span className={fieldLabelClass}>Часове</span>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.25"
+                  type="text"
+                  inputMode="decimal"
                   value={formValues.hours}
                   onChange={(event) =>
                     setFormValues((prev) => (prev ? { ...prev, hours: event.target.value } : prev))

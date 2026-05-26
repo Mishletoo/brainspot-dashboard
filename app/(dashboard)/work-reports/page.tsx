@@ -164,12 +164,41 @@ function monthBounds(monthValue: string) {
 }
 
 function formatHours(value: number) {
-  return Number.isInteger(value) ? `${value}` : value.toFixed(2);
+  if (!Number.isFinite(value)) return "0";
+  return `${value}`;
 }
 
 function parseHours(value: unknown) {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+type HoursParseResult = {
+  value: number | null;
+  error: string | null;
+};
+
+function parseHoursInput(rawValue: string): HoursParseResult {
+  const trimmed = rawValue.trim();
+  if (!trimmed) {
+    return { value: null, error: "Часовете са задължителни." };
+  }
+
+  const normalized = trimmed.replace(",", ".");
+  if (!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(normalized)) {
+    return { value: null, error: "Невалиден формат за часове. Използвайте число, напр. 2, 2.5, 0.5." };
+  }
+
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) {
+    return { value: null, error: "Невалидни часове." };
+  }
+
+  if (parsed < 0) {
+    return { value: null, error: "Часовете не могат да бъдат отрицателни." };
+  }
+
+  return { value: parsed, error: null };
 }
 
 function parseMoneyInput(value: string) {
@@ -774,12 +803,13 @@ export default function WorkReportsPage() {
 
     const payload: Record<string, string | number | null> = {};
     if (field === "hours") {
-      const parsedHours = Number(edit.hours);
-      if (!Number.isFinite(parsedHours) || parsedHours < 0) {
-        setErrorMessage("Невалидни часове. Въведете число >= 0.");
+      const parsedHoursResult = parseHoursInput(edit.hours);
+      if (parsedHoursResult.error || parsedHoursResult.value == null) {
+        setErrorMessage(parsedHoursResult.error ?? "Невалидни часове.");
         setSavingInlineFields((prev) => ({ ...prev, [saveKey]: false }));
         return;
       }
+      const parsedHours = parsedHoursResult.value;
       payload.hours = parsedHours;
     } else if (field === "notes") {
       payload.notes = edit.notes.trim() || null;
@@ -848,7 +878,13 @@ export default function WorkReportsPage() {
     }
 
     setIsSaving(true);
-    const hoursValue = Number(formValues.hours);
+    const parsedHoursResult = parseHoursInput(formValues.hours);
+    if (parsedHoursResult.error || parsedHoursResult.value == null) {
+      setErrorMessage(parsedHoursResult.error ?? "Невалидни часове.");
+      setIsSaving(false);
+      return;
+    }
+    const parsedHours = parsedHoursResult.value;
     const start = formValues.dateValue.start.trim() || null;
     const end = formValues.dateValue.end.trim() || null;
     const startDate = start;
@@ -859,7 +895,7 @@ export default function WorkReportsPage() {
       service_id: formValues.serviceId,
       task_id: null,
       task_description: formValues.taskDescription.trim(),
-      hours: Number.isFinite(hoursValue) ? hoursValue : 0,
+      hours: parsedHours,
       notes: formValues.notes.trim() || null,
       task_status: "waiting",
       start_date: startDate,
@@ -1008,10 +1044,11 @@ export default function WorkReportsPage() {
         return { ok: false, message: "Моля, попълнете клиент, услуга и задача." };
       }
 
-      const parsedHours = Number(values.hours);
-      if (!Number.isFinite(parsedHours) || parsedHours < 0) {
-        return { ok: false, message: "Въведете валидни часове (число >= 0)." };
+      const parsedHoursResult = parseHoursInput(values.hours);
+      if (parsedHoursResult.error || parsedHoursResult.value == null) {
+        return { ok: false, message: parsedHoursResult.error ?? "Въведете валидни часове." };
       }
+      const parsedHours = parsedHoursResult.value;
 
       const start = values.dateValue.start.trim() || null;
       const end = values.dateValue.end.trim() || null;
@@ -1212,9 +1249,8 @@ export default function WorkReportsPage() {
             <span className="inline-flex items-center gap-1.5">
               <input
                 autoFocus
-                type="number"
-                min="0"
-                step="0.25"
+                type="text"
+                inputMode="decimal"
                 value={draftEdit.hours}
                 onChange={(e) => handleDraftFieldChange(row, "hours", e.target.value)}
                 onKeyDown={(e) => {
@@ -1504,9 +1540,8 @@ export default function WorkReportsPage() {
                 <span className="inline-flex items-center gap-1" onClick={stopRowEvent} onKeyDown={stopRowEvent}>
                   <input
                     autoFocus
-                    type="number"
-                    min="0"
-                    step="0.25"
+                    type="text"
+                    inputMode="decimal"
                     value={draftEdit.hours}
                     onChange={(e) => handleDraftFieldChange(row, "hours", e.target.value)}
                     onKeyDown={(e) => {
@@ -1876,9 +1911,8 @@ export default function WorkReportsPage() {
                   <label className="flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Часове</span>
                     <input
-                      type="number"
-                      min="0.25"
-                      step="0.25"
+                      type="text"
+                      inputMode="decimal"
                       value={formValues.hours}
                       onChange={(event) => setFormValues((prev) => ({ ...prev, hours: event.target.value }))}
                       className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
