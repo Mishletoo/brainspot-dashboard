@@ -163,6 +163,53 @@ function monthBounds(monthValue: string) {
   };
 }
 
+const GRACE_PERIOD_LAST_DAY = 5;
+
+/**
+ * Format a Date as a YYYY-MM string using local calendar fields.
+ * Avoids toISOString() which can shift months across timezones near month boundaries.
+ */
+function toMonthValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function isCurrentMonth(monthValue: string, today: Date): boolean {
+  return monthValue === toMonthValue(today);
+}
+
+function isPreviousMonth(monthValue: string, today: Date): boolean {
+  const prev = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  return monthValue === toMonthValue(prev);
+}
+
+/**
+ * Grace period: employees can still edit the previous month through day 5 (inclusive)
+ * of the current local-calendar month.
+ */
+function isWithinGracePeriod(today: Date): boolean {
+  return today.getDate() <= GRACE_PERIOD_LAST_DAY;
+}
+
+/**
+ * Employee editability gate. Combines submission/lock status with grace-period calendar rules.
+ *
+ * Returns true only if BOTH are true:
+ *  - the monthly report is not already submitted/locked (monthState.isEditable)
+ *  - the calendar window allows the employee to edit this month (current month always,
+ *    previous month only through day 5 of current month inclusive)
+ *
+ * Admin behavior is intentionally NOT handled here — callers must bypass this for admins
+ * to preserve existing admin-unlock semantics.
+ */
+function canEmployeeEditMonth(monthValue: string, today: Date, monthState: MonthState): boolean {
+  if (!monthState.isEditable) return false;
+  if (isCurrentMonth(monthValue, today)) return true;
+  if (isPreviousMonth(monthValue, today) && isWithinGracePeriod(today)) return true;
+  return false;
+}
+
 function formatHours(value: number) {
   if (!Number.isFinite(value)) return "0";
   return `${value}`;
@@ -321,11 +368,10 @@ export default function WorkReportsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [monthValue, setMonthValue] = useState(() => {
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    return `${now.getFullYear()}-${month}`;
-  });
+  // Stable per mount; used both to default the selected month and to evaluate the grace period.
+  // Using local-calendar fields throughout to avoid timezone month-rollover bugs.
+  const [today] = useState<Date>(() => new Date());
+  const [monthValue, setMonthValue] = useState<string>(() => toMonthValue(today));
   const [formValues, setFormValues] = useState({
     clientId: "",
     serviceId: "",
@@ -726,6 +772,10 @@ export default function WorkReportsPage() {
   };
 
   const handleTaskStatusChange = async (itemId: string, newTaskStatus: string) => {
+    if (!canEditMonth) {
+      setErrorMessage("Този месец е заключен за редакция. Можете само да преглеждате отчета.");
+      return;
+    }
     const result = await supabase
       .from("work_report_items")
       .update({ task_status: newTaskStatus })
@@ -773,6 +823,7 @@ export default function WorkReportsPage() {
   };
 
   const startEditingField = (row: WorkItem, field: "hours" | "notes" | "date" | "priority") => {
+    if (!canEditMonth) return;
     const base = draftEditForRow(row);
     setDraftEdits((prev) => ({
       ...prev,
@@ -795,6 +846,10 @@ export default function WorkReportsPage() {
     field: "hours" | "notes" | "date" | "priority",
     priorityValue?: string
   ) => {
+    if (!canEditMonth) {
+      setErrorMessage("Този месец е заключен за редакция. Можете само да преглеждате отчета.");
+      return;
+    }
     const edit = draftEditForRow(row);
     const saveKey = `${row.id}:${field}`;
     setErrorMessage("");
@@ -867,7 +922,10 @@ export default function WorkReportsPage() {
   const handleAddRow = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!monthlyReportId) return;
-    if (!monthState.isEditable) return;
+    if (!canEditMonth) {
+      setErrorMessage("Този месец е заключен за редакция. Можете само да преглеждате отчета.");
+      return;
+    }
 
     setErrorMessage("");
     setSuccessMessage("");
@@ -976,6 +1034,10 @@ export default function WorkReportsPage() {
 
   const handleSendAndLock = async () => {
     if (!monthlyReportId || draftRows.length === 0) return;
+    if (!canEditMonth) {
+      setErrorMessage("Този месец е заключен за редакция. Можете само да преглеждате отчета.");
+      return;
+    }
 
     setIsSaving(true);
     setErrorMessage("");
@@ -1023,12 +1085,49 @@ export default function WorkReportsPage() {
     void handleSendAndLock();
   };
 
+  /**
+   * Effective month-level editability for the CURRENT viewer.
+   *
+   * - Admin: keeps existing behavior — can edit any month that is not submitted/locked.
+   *   Grace-period rules do NOT apply to admins.
+   * - Employee: must also pass canEmployeeEditMonth() — current month always editable,
+   *   previous month editable only through the 5th of the current month inclusive,
+   *   older months read-only.
+   */
+  const canEditMonth = useMemo<boolean>(() => {
+    if (currentRole === "admin") return monthState.isEditable;
+    return canEmployeeEditMonth(monthValue, today, monthState);
+  }, [currentRole, monthValue, today, monthState]);
+
+  /** Show the "previous-month grace period is active" hint to employees only. */
+  const showGracePeriodNote = useMemo<boolean>(
+    () =>
+      currentRole !== "admin" &&
+      isPreviousMonth(monthValue, today) &&
+      isWithinGracePeriod(today) &&
+      monthState.isEditable,
+    [currentRole, monthValue, today, monthState]
+  );
+
+  /**
+   * Show the generic read-only banner to employees when the month is uneditable for them
+   * but NOT because it is already submitted/locked (that case has its own status message).
+   */
+  const showEmployeeGraceReadOnlyNote = useMemo<boolean>(
+    () =>
+      currentRole !== "admin" &&
+      !canEditMonth &&
+      !monthState.isSubmitted &&
+      !monthState.isLocked,
+    [currentRole, canEditMonth, monthState]
+  );
+
   const canEditDraftRow = useCallback(
     (row: WorkItem) =>
       row.status === "draft" &&
-      monthState.isEditable &&
+      canEditMonth &&
       (currentRole === "admin" || (ownEmployeeId != null && employeeId === ownEmployeeId)),
-    [monthState.isEditable, currentRole, ownEmployeeId, employeeId]
+    [canEditMonth, currentRole, ownEmployeeId, employeeId]
   );
 
   const canDeleteDraftRow = canEditDraftRow;
@@ -1473,10 +1572,13 @@ export default function WorkReportsPage() {
     const taskName = row.taskDescription?.trim() || (row.taskId ? taskById.get(row.taskId) ?? "-" : "-");
     const status = validTaskStatus(row.taskStatus);
     const draftEdit = draftEditForRow(row);
-    const isEditingHours = editingField?.rowId === row.id && editingField.field === "hours";
-    const isEditingDate = editingField?.rowId === row.id && editingField.field === "date";
-    const isEditingPriority = editingField?.rowId === row.id && editingField.field === "priority";
-    const isEditingNotes = editingField?.rowId === row.id && editingField.field === "notes";
+    // readOnly applies to grace-period-expired months for employees and to non-own drafts.
+    // It collapses inline edit triggers into static badges and disables the status select.
+    const readOnly = !canEditDraftRow(row);
+    const isEditingHours = !readOnly && editingField?.rowId === row.id && editingField.field === "hours";
+    const isEditingDate = !readOnly && editingField?.rowId === row.id && editingField.field === "date";
+    const isEditingPriority = !readOnly && editingField?.rowId === row.id && editingField.field === "priority";
+    const isEditingNotes = !readOnly && editingField?.rowId === row.id && editingField.field === "notes";
     const isHoursSaving = Boolean(savingInlineFields[`${row.id}:hours`]);
     const isDateSaving = Boolean(savingInlineFields[`${row.id}:date`]);
     const isPrioritySaving = Boolean(savingInlineFields[`${row.id}:priority`]);
@@ -1521,17 +1623,26 @@ export default function WorkReportsPage() {
               <p className="truncate text-sm font-medium text-zinc-100" title={taskName}>
                 {taskName}
               </p>
-              <button
-                type="button"
-                onClick={(event) => {
-                  stopRowEvent(event);
-                  startEditingField(row, "notes");
-                }}
-                className="block w-full truncate text-left text-xs text-zinc-400 hover:text-zinc-200 hover:underline"
-                title={row.notes || "Редактирай бележка"}
-              >
-                {row.notes || "Без бележки"}
-              </button>
+              {readOnly ? (
+                <p
+                  className="block w-full truncate text-left text-xs text-zinc-400"
+                  title={row.notes || "Без бележки"}
+                >
+                  {row.notes || "Без бележки"}
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    stopRowEvent(event);
+                    startEditingField(row, "notes");
+                  }}
+                  className="block w-full truncate text-left text-xs text-zinc-400 hover:text-zinc-200 hover:underline"
+                  title={row.notes || "Редактирай бележка"}
+                >
+                  {row.notes || "Без бележки"}
+                </button>
+              )}
             </div>
 
                         <div className={DRAFT_META_CELL} onClick={stopRowEvent}>
@@ -1565,6 +1676,10 @@ export default function WorkReportsPage() {
                   >
                     ✓
                   </button>
+                </span>
+              ) : readOnly ? (
+                <span className={COMPACT_HOURS_BADGE} title="Само за преглед">
+                  {formatHours(row.hours)} ч
                 </span>
               ) : (
                 <button
@@ -1609,6 +1724,10 @@ export default function WorkReportsPage() {
                     </button>
                   </div>
                 </div>
+              ) : readOnly ? (
+                <span className={COMPACT_DATE_BADGE} title={dateLabel ?? "—"}>
+                  {dateLabel ?? "—"}
+                </span>
               ) : (
                 <button
                   type="button"
@@ -1650,6 +1769,12 @@ export default function WorkReportsPage() {
                     </option>
                   ))}
                 </select>
+              ) : readOnly ? (
+                <span className={COMPACT_PRIORITY_BADGE} title={priorityLabel(row.priority)}>
+                  {row.priority != null && PRIORITY_VALUES.has(row.priority)
+                    ? priorityLabel(row.priority)
+                    : "—"}
+                </span>
               ) : (
                 <button
                   type="button"
@@ -1670,7 +1795,8 @@ export default function WorkReportsPage() {
                 value={status}
                 onClick={stopRowEvent}
                 onChange={(e) => { stopRowEvent(e); handleTaskStatusChange(row.id, e.target.value); }}
-                className={`${COMPACT_STATUS_SELECT} ${taskStatusClasses(status)}`}
+                disabled={readOnly}
+                className={`${COMPACT_STATUS_SELECT} ${taskStatusClasses(status)} disabled:cursor-not-allowed disabled:opacity-70`}
               >
                 {TASK_STATUS_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value} className="bg-zinc-900 text-zinc-100">
@@ -1798,6 +1924,27 @@ export default function WorkReportsPage() {
           <div className="rounded-2xl border border-rose-800 bg-rose-950/40 p-4 text-sm text-rose-200">{errorMessage}</div>
         )}
 
+        {!isLoading && !errorMessage && (showGracePeriodNote || showEmployeeGraceReadOnlyNote) && (
+          <div className="mb-3 space-y-2">
+            {showGracePeriodNote && (
+              <div
+                className="rounded-2xl border border-sky-700/70 bg-sky-950/40 px-4 py-3 text-sm text-sky-100"
+                role="status"
+              >
+                Можете да довършите отчета за предходния месец до 5-то число.
+              </div>
+            )}
+            {showEmployeeGraceReadOnlyNote && (
+              <div
+                className="rounded-2xl border border-amber-700/70 bg-amber-950/40 px-4 py-3 text-sm text-amber-100"
+                role="status"
+              >
+                Този месец е заключен за редакция. Можете само да преглеждате отчета.
+              </div>
+            )}
+          </div>
+        )}
+
         {!isLoading && !errorMessage && (
           <div className="grid min-w-0 grid-cols-1 gap-3 xl:grid-cols-3">
             <div className="min-w-0 space-y-3 xl:col-span-2">
@@ -1871,7 +2018,7 @@ export default function WorkReportsPage() {
                   </p>
                 )}
                 <form onSubmit={handleAddRow} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <fieldset disabled={!monthState.isEditable || isSaving} className="contents">
+                  <fieldset disabled={!canEditMonth || isSaving} className="contents">
                   <label className="relative overflow-visible flex flex-col gap-1">
                     <span className="text-sm text-zinc-400">Клиент</span>
                     <CustomSelect
@@ -1882,7 +2029,7 @@ export default function WorkReportsPage() {
                         setAdSpendMessage("");
                       }}
                       options={[{ value: "", label: "Избери клиент" }, ...clientSelectOptions]}
-                      disabled={!monthState.isEditable || isSaving}
+                      disabled={!canEditMonth || isSaving}
                     />
                   </label>
 
@@ -1892,7 +2039,7 @@ export default function WorkReportsPage() {
                       value={formValues.serviceId}
                       onChange={(nextServiceId) => setFormValues((prev) => ({ ...prev, serviceId: nextServiceId }))}
                       options={[{ value: "", label: "Избери услуга" }, ...serviceSelectOptions]}
-                      disabled={!monthState.isEditable || isSaving}
+                      disabled={!canEditMonth || isSaving}
                     />
                   </label>
 
@@ -1936,7 +2083,7 @@ export default function WorkReportsPage() {
                       value={formValues.priority}
                       onChange={(nextPriority) => setFormValues((prev) => ({ ...prev, priority: nextPriority }))}
                       options={prioritySelectOptions}
-                      disabled={!monthState.isEditable || isSaving}
+                      disabled={!canEditMonth || isSaving}
                     />
                   </label>
 
@@ -1954,7 +2101,7 @@ export default function WorkReportsPage() {
                   <div className="md:col-span-2">
                     <button
                       type="submit"
-                      disabled={isSaving || !monthState.isEditable}
+                      disabled={isSaving || !canEditMonth}
                       className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-200 disabled:opacity-60"
                     >
                       Добави ред
@@ -2148,7 +2295,7 @@ export default function WorkReportsPage() {
               <button
                 type="button"
                 onClick={handleSubmitWithUnfinishedCheck}
-                disabled={isSaving || draftRows.length === 0 || !monthState.isEditable}
+                disabled={isSaving || draftRows.length === 0 || !canEditMonth}
                 className="w-full rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 disabled:opacity-50"
               >
                 Изпрати и заключи месеца
