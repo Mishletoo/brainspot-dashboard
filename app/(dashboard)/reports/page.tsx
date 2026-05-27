@@ -3,10 +3,14 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { resolveAppRole, type AppRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabaseClient";
+import { WorkingReviewMode, type WorkingReviewItem } from "@/components/reports/WorkingReviewMode";
 
 type Employee = {
   id: string;
   name: string;
+  email: string | null;
+  hourlyRate: number | null;
+  monthlyHours: number | null;
   grossSalary: number | null;
   bonus: number | null;
   vouchers: number | null;
@@ -23,12 +27,14 @@ type Service = {
   name: string;
 };
 
-type WorkItemRow = {
+type Task = {
   id: string;
-  employeeId: string;
-  clientId: string | null;
-  serviceId: string | null;
-  hours: number;
+  name: string;
+};
+
+type WorkItemRow = WorkingReviewItem & {
+  isSubmitted: boolean;
+  employeeName: string;
 };
 
 type ClientEmployeeCostRow = {
@@ -71,25 +77,34 @@ function workingDaysInMonth(year: number, month: number) {
   return count;
 }
 
-function monthMatchesRow(row: Record<string, unknown>, monthValue: string) {
-  const { startIso, endIso, year, month } = monthBounds(monthValue);
+function monthlyReportMatchesSelectedMonth(row: Record<string, unknown>, monthValue: string) {
+  const { year, month } = monthBounds(monthValue);
+  const reportYear = Number(row.report_year);
+  const reportMonth = Number(row.report_month);
+  return Number.isFinite(reportYear) && Number.isFinite(reportMonth) && reportYear === year && reportMonth === month;
+}
 
-  const dateKeys = ["report_month", "month_start", "report_date", "created_at"];
-  for (const key of dateKeys) {
-    const value = row[key];
-    if (typeof value === "string" && value.length >= 10) {
-      const dateValue = value.slice(0, 10);
-      if (dateValue >= startIso && dateValue <= endIso) return true;
-    }
+function toRelationObject<T extends Record<string, unknown>>(value: unknown): T | null {
+  if (Array.isArray(value)) {
+    const first = value[0];
+    if (first && typeof first === "object") return first as T;
+    return null;
   }
+  if (value && typeof value === "object") return value as T;
+  return null;
+}
 
-  const rowYear = Number(row.report_year ?? row.year);
-  const rowMonth = Number(row.report_month_number ?? row.month);
-  if (Number.isFinite(rowYear) && Number.isFinite(rowMonth)) {
-    return rowYear === year && rowMonth === month;
-  }
-
-  return false;
+function resolveEmployeeDisplayName({
+  fullName,
+  employeeEmail,
+}: {
+  fullName: string;
+  employeeEmail: string | null;
+}) {
+  const trimmedFullName = fullName.trim();
+  if (trimmedFullName.length > 0) return trimmedFullName;
+  if (employeeEmail && employeeEmail.trim().length > 0) return employeeEmail.trim();
+  return "Неразпознат служител";
 }
 
 function monthLabel(monthValue: string) {
@@ -105,11 +120,19 @@ function parseHours(value: unknown) {
 }
 
 const REPORT_SUBMITTED_STATUSES = new Set(["submitted", "pending_review", "approved"]);
+const REPORT_LOCKED_STATUSES = new Set(["locked", "approved", "finalized"]);
 function reportIsSubmitted(row: Record<string, unknown>): boolean {
   const status = String(row.status ?? "").toLowerCase().trim();
   const submittedAt = row.submitted_at;
   const hasSubmittedAt = typeof submittedAt === "string" && submittedAt.trim().length > 0;
   return hasSubmittedAt || REPORT_SUBMITTED_STATUSES.has(status);
+}
+
+function reportIsLocked(row: Record<string, unknown>): boolean {
+  const status = String(row.status ?? "").toLowerCase().trim();
+  const lockedAt = row.locked_at;
+  const hasLockedAt = typeof lockedAt === "string" && lockedAt.trim().length > 0;
+  return hasLockedAt || REPORT_LOCKED_STATUSES.has(status);
 }
 
 function formatHours(value: number) {
@@ -122,6 +145,7 @@ function formatCurrency(value: number | null | undefined) {
 }
 
 export default function ReportsPage() {
+  const [reportMode, setReportMode] = useState<"official" | "working">("official");
   const [currentRole, setCurrentRole] = useState<AppRole>("employee");
   const [monthValue, setMonthValue] = useState(() => {
     const now = new Date();
@@ -132,6 +156,7 @@ export default function ReportsPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [items, setItems] = useState<WorkItemRow[]>([]);
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
@@ -141,6 +166,8 @@ export default function ReportsPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const canViewCompensation = currentRole === "admin";
+  const canViewWorkingReview =
+    currentRole === "admin" || currentRole === "manager" || currentRole === "finance_admin";
 
   useEffect(() => {
     let isMounted = true;
@@ -187,57 +214,92 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
+    if (!canViewWorkingReview && reportMode === "working") {
+      setReportMode("official");
+    }
+  }, [canViewWorkingReview, reportMode]);
+
+  useEffect(() => {
     const loadLookups = async () => {
       setIsLoading(true);
       setErrorMessage("");
 
-      const employeeSelect = canViewCompensation
-        ? "id, first_name, last_name, gross_salary, bonus, vouchers, hours_per_day"
-        : "id, first_name, last_name, hours_per_day";
-
       const [
-        { data: employeesData, error: employeesError },
         { data: clientsData, error: clientsError },
         { data: servicesData, error: servicesError },
+        { data: tasksData, error: tasksError },
       ] = await Promise.all([
-        supabase
-          .from("employees")
-          .select(employeeSelect)
-          .order("created_at", { ascending: false }),
         supabase.from("clients").select("id, name").order("name", { ascending: true }),
         supabase.from("services").select("id, name").order("name", { ascending: true }),
+        supabase.from("tasks").select("id, name").order("name", { ascending: true }),
       ]);
 
-      if (employeesError || clientsError || servicesError) {
+      let employeeRows: Array<Record<string, unknown>> = [];
+      let employeesError: unknown = null;
+
+      if (currentRole === "admin") {
+        try {
+          const response = await fetch("/api/employees", { method: "GET" });
+          const payload = (await response.json().catch(() => null)) as
+            | { employees?: Array<Record<string, unknown>>; error?: string }
+            | null;
+          if (!response.ok) {
+            employeesError = payload?.error ?? "Неуспешно зареждане на служителите от админ източника.";
+          } else {
+            employeeRows = (payload?.employees ?? []) as Array<Record<string, unknown>>;
+          }
+        } catch (error) {
+          employeesError = error;
+        }
+      } else {
+        const employeeSelect =
+          "id, first_name, last_name, email, hourly_cost, monthly_hours, gross_salary, bonus, vouchers, hours_per_day";
+        const employeeResult = await supabase
+          .from("employees")
+          .select(employeeSelect)
+          .order("created_at", { ascending: false });
+        employeesError = employeeResult.error;
+        employeeRows = ((employeeResult.data ?? []) as Array<Record<string, unknown>>);
+      }
+
+      if (employeesError || clientsError || servicesError || tasksError) {
         const details = JSON.stringify(
           {
             employeesError,
             clientsError,
             servicesError,
+            tasksError,
           },
           null,
           2
         );
-        setErrorMessage(`Не успяхме да заредим служители, клиенти и услуги.\n\nТехнически детайли:\n${details}`);
+        setErrorMessage(`Не успяхме да заредим служители, клиенти, услуги и задачи.\n\nТехнически детайли:\n${details}`);
         setEmployees([]);
         setClients([]);
         setServices([]);
+        setTasks([]);
         setItems([]);
         setIsLoading(false);
         return;
       }
 
-      const employeeRows = (employeesData ?? []) as unknown as Array<Record<string, unknown>>;
-
       setEmployees(
         employeeRows.map((row) => ({
           id: String(row.id ?? ""),
-          name: (() => {
-            const first = typeof row.first_name === "string" ? row.first_name : "";
-            const last = typeof row.last_name === "string" ? row.last_name : "";
-            const full = `${first} ${last}`.trim();
-            return full || "Без име";
+          name: resolveEmployeeDisplayName({
+            fullName: `${String(row.first_name ?? "")} ${String(row.last_name ?? "")}`.trim(),
+            employeeEmail: typeof row.email === "string" ? row.email : null,
+          }),
+          email: typeof row.email === "string" ? row.email : null,
+          hourlyRate: (() => {
+            const values = [row.hourly_cost, row.hourly_rate, row.rate];
+            for (const value of values) {
+              const parsed = Number(value);
+              if (Number.isFinite(parsed) && parsed > 0) return parsed;
+            }
+            return null;
           })(),
+          monthlyHours: Number.isFinite(Number(row.monthly_hours)) ? Number(row.monthly_hours) : null,
           grossSalary: Number.isFinite(Number(row.gross_salary)) ? Number(row.gross_salary) : null,
           bonus: Number.isFinite(Number(row.bonus)) ? Number(row.bonus) : null,
           vouchers: Number.isFinite(Number(row.vouchers)) ? Number(row.vouchers) : null,
@@ -259,18 +321,27 @@ export default function ReportsPage() {
         }))
       );
 
+      setTasks(
+        (tasksData ?? []).map((row: Record<string, unknown>) => ({
+          id: String(row.id ?? ""),
+          name: String(row.name ?? "Без име"),
+        }))
+      );
+
       setIsLoading(false);
     };
 
     loadLookups();
-  }, [canViewCompensation]);
+  }, [currentRole]);
 
   useEffect(() => {
     const loadMonthlyData = async () => {
       setIsLoading(true);
       setErrorMessage("");
 
-      const { data: reportsData, error: reportsError } = await supabase.from("monthly_reports").select("*");
+      const { data: reportsData, error: reportsError } = await supabase
+        .from("monthly_reports")
+        .select("id, employee_id, report_month, report_year, status, submitted_at, locked_at, employees(first_name, last_name, email)");
 
       if (reportsError) {
         const details = JSON.stringify(reportsError, null, 2);
@@ -280,32 +351,46 @@ export default function ReportsPage() {
         return;
       }
 
-      const submittedReports = (reportsData ?? [])
-        .filter((row: Record<string, unknown>) => {
-          return reportIsSubmitted(row) && monthMatchesRow(row, monthValue);
-        })
+      const monthReports = (reportsData ?? [])
+        .filter((row: Record<string, unknown>) => monthlyReportMatchesSelectedMonth(row, monthValue))
         .map((row: Record<string, unknown>) => row);
 
-      if (submittedReports.length === 0) {
+      if (monthReports.length === 0) {
         setItems([]);
         setIsLoading(false);
         return;
       }
 
+      const reportById = new Map<string, Record<string, unknown>>();
       const reportIdToEmployeeId = new Map<string, string>();
-      const reportIds: string[] = [];
-
-      for (const row of submittedReports) {
+      const reportEmployeeDisplayNameById = new Map<string, string>();
+      const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+      for (const row of monthReports) {
         const reportId = String(row.id ?? "");
         if (!reportId) continue;
+        reportById.set(reportId, row);
         const employeeId = String(row.employee_id ?? "");
-        reportIds.push(reportId);
         if (employeeId) {
           reportIdToEmployeeId.set(reportId, employeeId);
         }
+        const employeeRelation = toRelationObject<{ first_name?: unknown; last_name?: unknown; email?: unknown }>(
+          row.employees
+        );
+        const employeeFromMap = employeeById.get(employeeId);
+        const resolvedName = resolveEmployeeDisplayName({
+          fullName:
+            employeeFromMap?.name && employeeFromMap.name !== "Неразпознат служител"
+              ? employeeFromMap.name
+              : `${String(employeeRelation?.first_name ?? "")} ${String(employeeRelation?.last_name ?? "")}`.trim(),
+          employeeEmail:
+            employeeFromMap?.email ?? (typeof employeeRelation?.email === "string" ? employeeRelation.email : null),
+        });
+        if (employeeId) {
+          reportEmployeeDisplayNameById.set(employeeId, resolvedName);
+        }
       }
 
-      if (reportIds.length === 0) {
+      if (reportById.size === 0) {
         setItems([]);
         setIsLoading(false);
         return;
@@ -313,7 +398,9 @@ export default function ReportsPage() {
 
       const { data: itemsData, error: itemsError } = await supabase
         .from("work_report_items")
-        .select("id, monthly_report_id, client_id, service_id, hours");
+        .select(
+          "id, monthly_report_id, client_id, service_id, task_id, task_description, notes, hours, start_date, created_at"
+        );
 
       if (itemsError) {
         const details = JSON.stringify(itemsError, null, 2);
@@ -324,17 +411,45 @@ export default function ReportsPage() {
       }
 
       const mappedItems: WorkItemRow[] = (itemsData ?? [])
-        .filter((row: Record<string, unknown>) => reportIds.includes(String(row.monthly_report_id ?? "")))
+        .filter((row: Record<string, unknown>) => reportById.has(String(row.monthly_report_id ?? "")))
         .map((row: Record<string, unknown>) => {
           const monthlyReportId = String(row.monthly_report_id ?? "");
           const employeeId = reportIdToEmployeeId.get(monthlyReportId) ?? "";
+          const reportRow = reportById.get(monthlyReportId) ?? {};
+          const isSubmitted = reportIsSubmitted(reportRow);
+          const isLocked = reportIsLocked(reportRow);
+          const monthReviewStatus: WorkItemRow["monthReviewStatus"] = isLocked
+            ? "locked"
+            : isSubmitted
+              ? "submitted"
+              : "draft";
+          const createdAt =
+            typeof row.created_at === "string" && row.created_at.length >= 10
+              ? row.created_at.slice(0, 10)
+              : null;
+          const startDate =
+            typeof row.start_date === "string" && row.start_date.length >= 10
+              ? row.start_date.slice(0, 10)
+              : null;
 
           return {
             id: String(row.id ?? ""),
             employeeId,
+            employeeName:
+              reportEmployeeDisplayNameById.get(employeeId) ??
+              resolveEmployeeDisplayName({
+                fullName: "",
+                employeeEmail: null,
+              }),
             clientId: row.client_id != null ? String(row.client_id) : null,
             serviceId: row.service_id != null ? String(row.service_id) : null,
+            taskId: row.task_id != null ? String(row.task_id) : null,
+            taskDescription: typeof row.task_description === "string" ? row.task_description : null,
+            notes: typeof row.notes === "string" ? row.notes : "",
             hours: parseHours(row.hours),
+            activityDate: startDate ?? createdAt,
+            monthReviewStatus,
+            isSubmitted,
           };
         })
         .filter((item) => item.employeeId);
@@ -344,11 +459,11 @@ export default function ReportsPage() {
     };
 
     loadMonthlyData();
-  }, [monthValue]);
+  }, [monthValue, employees]);
 
-  const employeesById = useMemo(() => new Map(employees.map((e) => [e.id, e.name])), [employees]);
   const clientsById = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients]);
   const servicesById = useMemo(() => new Map(services.map((s) => [s.id, s.name])), [services]);
+  const tasksById = useMemo(() => new Map(tasks.map((t) => [t.id, t.name])), [tasks]);
 
   const workingDaysInfo = useMemo(() => {
     const { year, month } = monthBounds(monthValue);
@@ -387,14 +502,43 @@ export default function ReportsPage() {
     return costMap;
   }, [employees, workingDaysInfo]);
 
+  const workingReviewHourlyRateById = useMemo(() => {
+    const rates = new Map<string, number | null>();
+    for (const employee of employees) {
+      rates.set(employee.id, employee.hourlyRate ?? null);
+    }
+    return rates;
+  }, [employees]);
+
   const filteredItems = useMemo(
     () =>
       items.filter((item) => {
+        if (!item.isSubmitted) return false;
         if (selectedEmployeeId && item.employeeId !== selectedEmployeeId) return false;
         if (selectedClientId && item.clientId !== selectedClientId) return false;
         return true;
       }),
     [items, selectedEmployeeId, selectedClientId]
+  );
+
+  const workingReviewItems = useMemo<WorkingReviewItem[]>(
+    () =>
+      items.map((item) => ({
+        id: item.id,
+        employeeId: item.employeeId,
+        employeeName: item.employeeName,
+        clientId: item.clientId,
+        serviceId: item.serviceId,
+        taskId: item.taskId,
+        taskDescription:
+          item.taskDescription?.trim() ||
+          (item.taskId ? (tasksById.get(item.taskId) ?? null) : null),
+        notes: item.notes,
+        hours: item.hours,
+        activityDate: item.activityDate,
+        monthReviewStatus: item.monthReviewStatus,
+      })),
+    [items, tasksById]
   );
 
   const perEmployee = useMemo(() => {
@@ -412,7 +556,7 @@ export default function ReportsPage() {
     for (const item of filteredItems) {
       const existing = summary.get(item.employeeId) ?? {
         employeeId: item.employeeId,
-        employeeName: employeesById.get(item.employeeId) ?? "Неизвестен служител",
+        employeeName: item.employeeName,
         tasksCount: 0,
         hoursTotal: 0,
         clientNames: new Set<string>(),
@@ -437,7 +581,7 @@ export default function ReportsPage() {
         clientNames: Array.from(value.clientNames).sort((a, b) => a.localeCompare(b, "bg-BG")),
       }))
       .sort((a, b) => a.employeeName.localeCompare(b.employeeName, "bg-BG"));
-  }, [filteredItems, employeesById, clientsById]);
+  }, [filteredItems, clientsById]);
 
   const perClient = useMemo(() => {
     const summary = new Map<
@@ -464,7 +608,7 @@ export default function ReportsPage() {
       existing.tasksCount += 1;
       existing.hoursTotal += item.hours;
       if (item.employeeId) {
-        const employeeName = employeesById.get(item.employeeId);
+        const employeeName = item.employeeName;
         if (employeeName) {
           existing.employeeNames.add(employeeName);
         }
@@ -479,7 +623,7 @@ export default function ReportsPage() {
         employeeNames: Array.from(value.employeeNames).sort((a, b) => a.localeCompare(b, "bg-BG")),
       }))
       .sort((a, b) => a.clientName.localeCompare(b.clientName, "bg-BG"));
-  }, [filteredItems, clientsById, employeesById]);
+  }, [filteredItems, clientsById]);
 
   const costPerClientEmployee: ClientEmployeeCostRow[] = useMemo(() => {
     const summary = new Map<
@@ -510,7 +654,7 @@ export default function ReportsPage() {
           serviceId: serviceKey,
           serviceName: serviceKey === "none" ? "Без услуга" : servicesById.get(serviceKey) ?? "Неизвестна услуга",
           employeeId,
-          employeeName: employeesById.get(employeeId) ?? "Неизвестен служител",
+          employeeName: item.employeeName,
           hoursTotal: 0,
         };
 
@@ -554,7 +698,7 @@ export default function ReportsPage() {
       if (serviceNameCmp !== 0) return serviceNameCmp;
       return a.employeeName.localeCompare(b.employeeName, "bg-BG");
     });
-  }, [filteredItems, clientsById, employeesById, servicesById, employeeHourlyCostById]);
+  }, [filteredItems, clientsById, servicesById, employeeHourlyCostById]);
 
   const clientCostTotals = useMemo(() => {
     if (!selectedClientId) return null;
@@ -1002,8 +1146,35 @@ export default function ReportsPage() {
           <div>
             <h1 className="text-2xl font-semibold text-white">Справки</h1>
             <p className="text-sm text-zinc-400">
-              Обобщени данни по служители и по клиенти за изпратени месечни отчети.
+              {reportMode === "official"
+                ? "Официален изглед за изпратени и заключени месечни отчети."
+                : "Вътрешен управленски преглед на текущата работа, включително чернови."}
             </p>
+            <div className="mt-3 inline-flex rounded-xl border border-zinc-800 bg-zinc-900 p-1">
+              <button
+                type="button"
+                onClick={() => setReportMode("official")}
+                className={`rounded-lg px-3 py-1.5 text-sm transition ${
+                  reportMode === "official"
+                    ? "bg-zinc-100 text-zinc-900"
+                    : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                }`}
+              >
+                Официални отчети
+              </button>
+              <button
+                type="button"
+                onClick={() => setReportMode("working")}
+                disabled={!canViewWorkingReview}
+                className={`rounded-lg px-3 py-1.5 text-sm transition ${
+                  reportMode === "working"
+                    ? "bg-zinc-100 text-zinc-900"
+                    : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                Работен преглед
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-end gap-3">
@@ -1020,37 +1191,41 @@ export default function ReportsPage() {
               />
             </div>
 
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
-              <label className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">Служител</label>
-              <select
-                value={selectedEmployeeId}
-                onChange={(event) => setSelectedEmployeeId(event.target.value)}
-                className="w-40 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-              >
-                <option value="">Всички</option>
-                {employees.map((employee) => (
-                  <option key={employee.id} value={employee.id}>
-                    {employee.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {reportMode === "official" && (
+              <>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
+                  <label className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">Служител</label>
+                  <select
+                    value={selectedEmployeeId}
+                    onChange={(event) => setSelectedEmployeeId(event.target.value)}
+                    className="w-40 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+                  >
+                    <option value="">Всички</option>
+                    {employees.map((employee) => (
+                      <option key={employee.id} value={employee.id}>
+                        {employee.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
-              <label className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">Клиент</label>
-              <select
-                value={selectedClientId}
-                onChange={(event) => setSelectedClientId(event.target.value)}
-                className="w-40 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-              >
-                <option value="">Всички</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
+                  <label className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">Клиент</label>
+                  <select
+                    value={selectedClientId}
+                    onChange={(event) => setSelectedClientId(event.target.value)}
+                    className="w-40 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+                  >
+                    <option value="">Всички</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -1066,13 +1241,31 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {!isLoading && !errorMessage && !hasData && (
+        {!isLoading && !errorMessage && reportMode === "official" && !hasData && (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-sm text-zinc-400">
             Няма данни за избраните филтри.
           </div>
         )}
 
-        {!isLoading && !errorMessage && hasData && (
+        {!isLoading && !errorMessage && reportMode === "working" && !canViewWorkingReview && (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-sm text-zinc-400">
+            Нямате достъп до вътрешния режим „Работен преглед“.
+          </div>
+        )}
+
+        {!isLoading && !errorMessage && reportMode === "working" && canViewWorkingReview && (
+          <WorkingReviewMode
+            items={workingReviewItems}
+            employees={employees.map((employee) => ({ id: employee.id, name: employee.name }))}
+            clients={clients}
+            services={services}
+            tasks={tasks}
+            canViewCompensation={canViewCompensation}
+            employeeHourlyCostById={workingReviewHourlyRateById}
+          />
+        )}
+
+        {!isLoading && !errorMessage && reportMode === "official" && hasData && (
           <>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {/* Section 1: По служители */}
