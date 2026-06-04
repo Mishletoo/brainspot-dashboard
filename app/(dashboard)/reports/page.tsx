@@ -1,9 +1,11 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { resolveAppRole, type AppRole } from "@/lib/roles";
 import { supabase } from "@/lib/supabaseClient";
 import { WorkingReviewMode, type WorkingReviewItem } from "@/components/reports/WorkingReviewMode";
+import { buildReportsPdfData, type ReportsPdfSourceRow } from "@/components/reports/pdf/reportPdfDataBuilder";
+import { exportReportsPdf } from "@/components/reports/pdf/exportReportsPdf";
 
 type Employee = {
   id: string;
@@ -161,11 +163,15 @@ export default function ReportsPage() {
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [selectedPdfClientId, setSelectedPdfClientId] = useState<string>("");
+  const [showEmployeesInPdf, setShowEmployeesInPdf] = useState(true);
+  const [showCostInPdf, setShowCostInPdf] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const canViewCompensation = currentRole === "admin";
+  const canExportPdf = currentRole === "admin" || currentRole === "manager" || currentRole === "finance_admin";
   const canViewWorkingReview =
     currentRole === "admin" || currentRole === "manager" || currentRole === "finance_admin";
 
@@ -218,6 +224,16 @@ export default function ReportsPage() {
       setReportMode("official");
     }
   }, [canViewWorkingReview, reportMode]);
+
+  useEffect(() => {
+    if (!canViewCompensation && showCostInPdf) {
+      setShowCostInPdf(false);
+    }
+  }, [canViewCompensation, showCostInPdf]);
+
+  useEffect(() => {
+    setSelectedPdfClientId(selectedClientId);
+  }, [selectedClientId]);
 
   useEffect(() => {
     const loadLookups = async () => {
@@ -521,9 +537,38 @@ export default function ReportsPage() {
     [items, selectedEmployeeId, selectedClientId]
   );
 
+  const officialItemsForPdfBase = useMemo(
+    () =>
+      items.filter((item) => {
+        if (!item.isSubmitted) return false;
+        if (selectedEmployeeId && item.employeeId !== selectedEmployeeId) return false;
+        return true;
+      }),
+    [items, selectedEmployeeId]
+  );
+
+  const filteredWorkingItems = useMemo(
+    () =>
+      items.filter((item) => {
+        if (selectedEmployeeId && item.employeeId !== selectedEmployeeId) return false;
+        if (selectedClientId && item.clientId !== selectedClientId) return false;
+        return true;
+      }),
+    [items, selectedEmployeeId, selectedClientId]
+  );
+
+  const workingItemsForPdfBase = useMemo(
+    () =>
+      items.filter((item) => {
+        if (selectedEmployeeId && item.employeeId !== selectedEmployeeId) return false;
+        return true;
+      }),
+    [items, selectedEmployeeId]
+  );
+
   const workingReviewItems = useMemo<WorkingReviewItem[]>(
     () =>
-      items.map((item) => ({
+      filteredWorkingItems.map((item) => ({
         id: item.id,
         employeeId: item.employeeId,
         employeeName: item.employeeName,
@@ -538,7 +583,33 @@ export default function ReportsPage() {
         activityDate: item.activityDate,
         monthReviewStatus: item.monthReviewStatus,
       })),
-    [items, tasksById]
+    [filteredWorkingItems, tasksById]
+  );
+
+  const activeRowsForPdfExport = useMemo<WorkItemRow[]>(
+    () => {
+      const modeRows = reportMode === "official" ? officialItemsForPdfBase : workingItemsForPdfBase;
+      if (!selectedPdfClientId) return modeRows;
+      return modeRows.filter((item) => item.clientId === selectedPdfClientId);
+    },
+    [reportMode, officialItemsForPdfBase, workingItemsForPdfBase, selectedPdfClientId]
+  );
+
+  const activePdfSourceRows = useMemo<ReportsPdfSourceRow[]>(
+    () =>
+      activeRowsForPdfExport.map((item) => ({
+        id: item.id,
+        employeeId: item.employeeId,
+        employeeName: item.employeeName,
+        clientId: item.clientId,
+        serviceId: item.serviceId,
+        taskId: item.taskId,
+        taskDescription: item.taskDescription,
+        notes: item.notes,
+        hours: item.hours,
+        activityDate: item.activityDate,
+      })),
+    [activeRowsForPdfExport]
   );
 
   const perEmployee = useMemo(() => {
@@ -721,419 +792,34 @@ export default function ReportsPage() {
     };
   }, [selectedClientId, costPerClientEmployee]);
 
-  const clientServiceGroups = useMemo(
-    () => {
-      if (!selectedClientId || costPerClientEmployee.length === 0) return [];
-
-      type ServiceGroup = {
-        serviceId: string;
-        serviceName: string;
-        rows: ClientEmployeeCostRow[];
-        totalHours: number;
-        totalCost: number | null;
-      };
-
-      const groups = new Map<string, ServiceGroup>();
-
-      for (const row of costPerClientEmployee as any[]) {
-        const serviceId = row.serviceId ?? "none";
-        const serviceName = row.serviceName ?? "Без услуга";
-
-        const existing: ServiceGroup =
-          groups.get(serviceId) ??
-          {
-            serviceId,
-            serviceName,
-            rows: [] as ClientEmployeeCostRow[],
-            totalHours: 0,
-            totalCost: null as number | null,
-          };
-
-        existing.rows.push(row);
-        existing.totalHours += row.hoursTotal;
-
-        if (row.totalCost != null && Number.isFinite(row.totalCost)) {
-          existing.totalCost = (existing.totalCost ?? 0) + row.totalCost;
-        }
-
-        groups.set(serviceId, existing);
-      }
-
-      return Array.from(groups.values()).sort((a, b) =>
-        a.serviceName.localeCompare(b.serviceName, "bg-BG")
-      );
-    },
-    [selectedClientId, costPerClientEmployee]
-  );
-
   const hasData = filteredItems.length > 0;
 
-  async function handleExportClientReport() {
-    if (!canViewCompensation) return;
-    if (!selectedClientId || !clientCostTotals || clientServiceGroups.length === 0) return;
-    if (isExporting) return;
+  async function handleExportPdfReport() {
+    if (!canExportPdf || isExporting || activePdfSourceRows.length === 0) return;
 
     setIsExporting(true);
     try {
-      const rawClientName = clientsById.get(selectedClientId) ?? "client";
-      const safeClientName = rawClientName
-        .toString()
-        .trim()
-        .toLowerCase()
-        .replace(/[\s]+/g, "-")
-        .replace(/[^a-zа-я0-9\-]+/gi, "");
-
-      const safeMonth = monthValue.replace(/[^0-9\-]+/g, "") || monthValue;
-
-      const filename = `client-report-${safeClientName || "client"}-${safeMonth}.pdf`;
-
-      const [{ PDFDocument, rgb }, fontkitModule] = await Promise.all([
-        import("pdf-lib"),
-        import("@pdf-lib/fontkit"),
-      ]);
-
-      const fontkit = (fontkitModule as any).default ?? fontkitModule;
-
-      const pdfDoc = await PDFDocument.create();
-      pdfDoc.registerFontkit(fontkit);
-
-      // Typography: use embedded sans-serif with proper Cyrillic support
-      const fontResponse = await fetch("/fonts/Roboto-Regular.ttf");
-      if (!fontResponse.ok) {
-        throw new Error(
-          `[Reports PDF] Failed to load font /fonts/Roboto-Regular.ttf (status ${fontResponse.status})`
-        );
-      }
-      const fontBytes = await fontResponse.arrayBuffer();
-      let page = pdfDoc.addPage();
-      const { width: pageWidth, height: pageHeight } = page.getSize();
-      const font = await pdfDoc.embedFont(fontBytes);
-
-      // Color system for a clean light report.
-      const textPrimary = rgb(0.09, 0.11, 0.14);
-      const textSecondary = rgb(0.39, 0.44, 0.5);
-      const borderSoft = rgb(0.86, 0.89, 0.93);
-      const panelBg = rgb(0.975, 0.98, 0.988);
-      const tableHeaderBg = rgb(0.956, 0.968, 0.986);
-      const zebraA = rgb(0.985, 0.988, 0.994);
-      const zebraB = rgb(0.972, 0.978, 0.988);
-      const subtotalBg = rgb(0.945, 0.952, 0.965);
-      const totalBg = rgb(0.918, 0.928, 0.946);
-
-      const marginLeft = 28;
-      const marginRight = 28;
-      const marginTop = 42;
-      const marginBottom = 40;
-      const contentWidth = pageWidth - marginLeft - marginRight;
-
-      const titleSize = 19;
-      const bodySize = 10.5;
-      const tableHeaderSize = 9.3;
-      const tableCellSize = 9.6;
-      const headerHeight = 74;
-      const metaRowHeight = 18;
-      const tableHeaderHeight = 26;
-      const tableRowBaseHeight = 24;
-      const cellPadding = 10;
-
-      let cursorY = pageHeight - marginTop - headerHeight - 16;
-
-      const drawTextRaw = (
-        text: string,
-        x: number,
-        y: number,
-        size: number,
-        color = textPrimary
-      ) => {
-        page.drawText(text, {
-          x,
-          y,
-          size,
-          font,
-          color,
-        });
-      };
-
-      const textWidth = (text: string, size: number) => font.widthOfTextAtSize(text, size);
-
-      const truncateToWidth = (value: string, maxWidth: number, size: number) => {
-        const safe = (value ?? "").toString();
-        if (!safe) return "";
-        if (textWidth(safe, size) <= maxWidth) return safe;
-        const ellipsis = "…";
-        let result = safe;
-        while (result.length > 0 && textWidth(result + ellipsis, size) > maxWidth) {
-          result = result.slice(0, -1);
-        }
-        return result ? `${result}${ellipsis}` : ellipsis;
-      };
-
-      const drawHeader = () => {
-        const headerTopY = pageHeight - marginTop;
-        drawTextRaw("Brain Spot", marginLeft, headerTopY - 14, 12, textSecondary);
-        drawTextRaw("Отчет за клиент", marginLeft, headerTopY - 38, titleSize, textPrimary);
-        page.drawLine({
-          start: { x: marginLeft, y: pageHeight - marginTop - headerHeight },
-          end: { x: pageWidth - marginRight, y: pageHeight - marginTop - headerHeight },
-          thickness: 1,
-          color: borderSoft,
-        });
-
-      };
-
-      const addNewPage = () => {
-        page = pdfDoc.addPage([pageWidth, pageHeight]);
-        drawHeader();
-        cursorY = pageHeight - marginTop - headerHeight - 16;
-      };
-
-      const ensureSpace = (requiredHeight: number) => {
-        if (cursorY - requiredHeight < marginBottom) {
-          addNewPage();
-        }
-      };
-
-      const totalTasks = filteredItems.length;
-      const totalHoursText = formatHours(clientCostTotals.totalHours);
-      const totalCostText =
-        clientCostTotals.totalCost == null
-          ? "—"
-          : formatCurrency(clientCostTotals.totalCost);
-
-      drawHeader();
-
-      // Meta summary panel (same data, refined visual hierarchy).
-      ensureSpace(metaRowHeight * 3 + 24);
-      const metaTopY = cursorY;
-      const metaPanelHeight = metaRowHeight * 3 + 14;
-      page.drawRectangle({
-        x: marginLeft,
-        y: metaTopY - metaPanelHeight,
-        width: contentWidth,
-        height: metaPanelHeight,
-        color: panelBg,
+      const pdfData = buildReportsPdfData({
+        mode: reportMode,
+        monthLabel: monthLabel(monthValue),
+        clientLabel: selectedPdfClientId
+          ? clientsById.get(selectedPdfClientId) ?? "Неизвестен клиент"
+          : "Всички клиенти",
+        rows: activePdfSourceRows,
+        servicesById,
+        tasksById,
+        hourlyRateByEmployeeId: workingReviewHourlyRateById,
+        generatedAt: new Date(),
+        showCost: canViewCompensation && showCostInPdf,
+        showEmployees: showEmployeesInPdf,
       });
 
-      const leftColX = marginLeft + 14;
-      const rightColX = marginLeft + contentWidth / 2 + 8;
-      const metaLabelValueGap = 14;
-      const metaColumnWidth = contentWidth / 2 - 22;
-      const firstMetaRowY = metaTopY - 18;
-      const secondMetaRowY = firstMetaRowY - metaRowHeight;
-      const thirdMetaRowY = secondMetaRowY - metaRowHeight;
-
-      const drawMetaLine = (label: string, value: string, x: number, y: number) => {
-        const labelWidth = textWidth(label, bodySize);
-        const valueX = x + labelWidth + metaLabelValueGap;
-        const maxValueWidth = Math.max(20, x + metaColumnWidth - valueX);
-        drawTextRaw(label, x, y, bodySize, textSecondary);
-        drawTextRaw(truncateToWidth(value, maxValueWidth, bodySize), valueX, y, bodySize, textPrimary);
-      };
-
-      drawMetaLine("Клиент:", String(rawClientName), leftColX, firstMetaRowY);
-      drawMetaLine("Месец:", monthLabel(monthValue), leftColX, secondMetaRowY);
-      drawMetaLine("Общо задачи:", String(totalTasks), leftColX, thirdMetaRowY);
-      drawMetaLine("Общо часове:", totalHoursText, rightColX, firstMetaRowY);
-      drawMetaLine("Обща себестойност:", totalCostText, rightColX, secondMetaRowY);
-
-      cursorY = metaTopY - metaPanelHeight - 18;
-
-      const columns = [
-        { key: "service", title: "Услуга", width: 168, align: "left" as const },
-        { key: "employee", title: "Служител", width: 147, align: "left" as const },
-        { key: "hours", title: "Часове", width: 56, align: "right" as const },
-        { key: "rate", title: "Цена на час", width: 72, align: "right" as const },
-        { key: "cost", title: "Себестойност", width: 64, align: "right" as const },
-      ];
-      const columnGap = 8;
-
-      let columnX = marginLeft;
-      const tableColumns = columns.map((col) => {
-        const mapped = { ...col, x: columnX };
-        columnX += col.width + columnGap;
-        return mapped;
+      await exportReportsPdf(pdfData, {
+        showEmployees: showEmployeesInPdf,
+        showCost: canViewCompensation && showCostInPdf,
       });
-
-      function drawTableHeader() {
-        ensureSpace(tableHeaderHeight + 8);
-        const y = cursorY - tableHeaderHeight;
-        page.drawRectangle({
-          x: marginLeft,
-          y,
-          width: contentWidth,
-          height: tableHeaderHeight,
-          color: tableHeaderBg,
-        });
-
-        page.drawLine({
-          start: { x: marginLeft, y },
-          end: { x: pageWidth - marginRight, y },
-          thickness: 1,
-          color: borderSoft,
-        });
-
-        tableColumns.forEach((col) => {
-          const titleWidth = textWidth(col.title, tableHeaderSize);
-          const textX =
-            col.align === "right"
-              ? col.x + col.width - cellPadding - titleWidth
-              : col.x + cellPadding;
-          drawTextRaw(col.title, textX, y + 8, tableHeaderSize, textPrimary);
-        });
-
-        cursorY = y;
-      }
-
-      const drawTableRow = (
-        service: string,
-        employee: string,
-        hours: string,
-        rate: string,
-        cost: string,
-        options?: { rowIndex?: number; isSubtotal?: boolean; isGrandTotal?: boolean }
-      ) => {
-        const wrapToTwoLines = (value: string, maxWidth: number) => {
-          const safe = String(value ?? "").trim();
-          if (!safe) return [""];
-          if (textWidth(safe, tableCellSize) <= maxWidth) return [safe];
-
-          const words = safe.split(/\s+/).filter(Boolean);
-          let firstLine = "";
-          let consumed = 0;
-
-          for (let i = 0; i < words.length; i++) {
-            const candidate = firstLine ? `${firstLine} ${words[i]}` : words[i];
-            if (textWidth(candidate, tableCellSize) <= maxWidth) {
-              firstLine = candidate;
-              consumed = i + 1;
-            } else {
-              break;
-            }
-          }
-
-          if (!firstLine) {
-            const hardFirst = truncateToWidth(safe, maxWidth, tableCellSize);
-            return [hardFirst];
-          }
-
-          const rest = words.slice(consumed).join(" ");
-          if (!rest) return [firstLine];
-          return [firstLine, truncateToWidth(rest, maxWidth, tableCellSize)];
-        };
-
-        const serviceLines = wrapToTwoLines(service, columns[0].width - cellPadding * 2);
-        const employeeLines = wrapToTwoLines(employee, columns[1].width - cellPadding * 2);
-        const lineCount = Math.max(serviceLines.length, employeeLines.length, 1);
-        const rowHeight = tableRowBaseHeight + (lineCount - 1) * 10;
-
-        ensureSpace(rowHeight + tableHeaderHeight + 2);
-        if (cursorY - rowHeight < marginBottom + 8) {
-          addNewPage();
-          drawTableHeader();
-        }
-
-        const rowIndex = options?.rowIndex ?? 0;
-        const isSubtotal = options?.isSubtotal ?? false;
-        const isGrandTotal = options?.isGrandTotal ?? false;
-        const y = cursorY - rowHeight;
-
-        const rowBg = isGrandTotal ? totalBg : isSubtotal ? subtotalBg : rowIndex % 2 === 0 ? zebraA : zebraB;
-        page.drawRectangle({
-          x: marginLeft,
-          y,
-          width: contentWidth,
-          height: rowHeight,
-          color: rowBg,
-        });
-        page.drawLine({
-          start: { x: marginLeft, y },
-          end: { x: pageWidth - marginRight, y },
-          thickness: 0.6,
-          color: borderSoft,
-        });
-
-        const cells = { service, employee, hours, rate, cost };
-        const topTextY = y + rowHeight - tableCellSize - 6;
-
-        tableColumns.forEach((col) => {
-          if (col.key === "service" || col.key === "employee") {
-            const lines = col.key === "service" ? serviceLines : employeeLines;
-            lines.forEach((line, index) => {
-              drawTextRaw(line, col.x + cellPadding, topTextY - index * 10.4, tableCellSize, textPrimary);
-            });
-            return;
-          }
-
-          const rawValue = String(cells[col.key as keyof typeof cells] ?? "");
-          const safeValue = truncateToWidth(rawValue, col.width - cellPadding * 2, tableCellSize);
-          const valueWidth = textWidth(safeValue, tableCellSize);
-          const textX =
-            col.align === "right"
-              ? col.x + col.width - cellPadding - valueWidth
-              : col.x + cellPadding;
-          drawTextRaw(safeValue, textX, topTextY, tableCellSize, textPrimary);
-        });
-
-        cursorY = y;
-      };
-
-      drawTableHeader();
-
-      let globalRowIndex = 0;
-
-      for (const group of clientServiceGroups as any[]) {
-        group.rows.forEach((row: any, index: number) => {
-          const serviceCell = index === 0 ? String(group.serviceName ?? "") : "";
-          const hoursText = formatHours(row.hoursTotal);
-          const hourlyText =
-            row.hourlyCost == null ? "—" : formatCurrency(row.hourlyCost);
-          const totalText =
-            row.totalCost == null ? "—" : formatCurrency(row.totalCost);
-
-          drawTableRow(
-            serviceCell,
-            String(row.employeeName ?? ""),
-            hoursText,
-            hourlyText,
-            totalText,
-            { rowIndex: globalRowIndex++ }
-          );
-        });
-
-        const groupHoursText = formatHours(group.totalHours);
-        const groupTotalText =
-          group.totalCost == null ? "—" : formatCurrency(group.totalCost);
-
-        drawTableRow(
-          "Общо за услугата",
-          "",
-          groupHoursText,
-          "—",
-          groupTotalText,
-          { isSubtotal: true, rowIndex: globalRowIndex++ }
-        );
-      }
-
-      drawTableRow(
-        "Общо за клиента",
-        "",
-        totalHoursText,
-        "—",
-        totalCostText,
-        { isSubtotal: true, isGrandTotal: true, rowIndex: globalRowIndex++ }
-      );
-
-      const pdfBytes = await pdfDoc.save();
-      const pdfBlobBytes = new Uint8Array(pdfBytes);
-      const blob = new Blob([pdfBlobBytes], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      link.click();
-      URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Failed to export client report PDF", error);
+      console.error("Failed to export reports PDF", error);
     } finally {
       setIsExporting(false);
     }
@@ -1191,43 +877,105 @@ export default function ReportsPage() {
               />
             </div>
 
-            {reportMode === "official" && (
-              <>
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
-                  <label className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">Служител</label>
-                  <select
-                    value={selectedEmployeeId}
-                    onChange={(event) => setSelectedEmployeeId(event.target.value)}
-                    className="w-40 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                  >
-                    <option value="">Всички</option>
-                    {employees.map((employee) => (
-                      <option key={employee.id} value={employee.id}>
-                        {employee.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
+              <label className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">Служител</label>
+              <select
+                value={selectedEmployeeId}
+                onChange={(event) => setSelectedEmployeeId(event.target.value)}
+                className="w-40 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+              >
+                <option value="">Всички</option>
+                {employees.map((employee) => (
+                  <option key={employee.id} value={employee.id}>
+                    {employee.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
-                  <label className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">Клиент</label>
-                  <select
-                    value={selectedClientId}
-                    onChange={(event) => setSelectedClientId(event.target.value)}
-                    className="w-40 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                  >
-                    <option value="">Всички</option>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
+              <label className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">Клиент</label>
+              <select
+                value={selectedClientId}
+                onChange={(event) => setSelectedClientId(event.target.value)}
+                className="w-40 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+              >
+                <option value="">Всички</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
+
+        {!isLoading && !errorMessage && canExportPdf && (
+          <section className="mb-4 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-white">PDF експорт</h2>
+                <p className="text-xs text-zinc-500">
+                  Режим: {reportMode === "official" ? "Официални отчети" : "Работен преглед"} · Месец:{" "}
+                  {monthLabel(monthValue)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleExportPdfReport}
+                disabled={isExporting || activeRowsForPdfExport.length === 0}
+                className="inline-flex items-center justify-center rounded-full border border-lime-500/40 bg-zinc-950 px-3 py-1.5 text-xs font-medium text-zinc-100 shadow-sm transition hover:border-lime-400/70 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isExporting ? "Генериране..." : "Изтегли PDF"}
+              </button>
+            </div>
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-3 py-2">
+                <label className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">Клиент за PDF</label>
+                <select
+                  value={selectedPdfClientId}
+                  onChange={(event) => setSelectedPdfClientId(event.target.value)}
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100 outline-none focus:border-lime-400/70"
+                >
+                  <option value="">Всички клиенти</option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-5 text-sm text-zinc-200">
+              <label className="inline-flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showEmployeesInPdf}
+                  onChange={(event) => setShowEmployeesInPdf(event.target.checked)}
+                  className="h-4 w-4 rounded border-zinc-700 bg-zinc-950 accent-lime-400"
+                />
+                Покажи служители
+              </label>
+              {canViewCompensation && (
+                <label className="inline-flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={showCostInPdf}
+                    onChange={(event) => setShowCostInPdf(event.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-700 bg-zinc-950 accent-lime-400"
+                  />
+                  Покажи себестойност
+                </label>
+              )}
+            </div>
+            {canViewCompensation && showCostInPdf && (
+              <p className="mt-3 rounded-xl border border-amber-700/70 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
+                Внимание: PDF-ът ще включва вътрешна себестойност.
+              </p>
+            )}
+          </section>
+        )}
 
         {isLoading && (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-sm text-zinc-400">
@@ -1472,149 +1220,6 @@ export default function ReportsPage() {
             </section>
             )}
 
-            {/* Section 4: Преглед на отчет за клиента */}
-            {canViewCompensation && selectedClientId && clientCostTotals && clientServiceGroups.length > 0 && (
-              <div id="client-report-preview">
-                <section className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between">
-                    <div>
-                      <h2 className="text-sm font-semibold text-white">Преглед на отчет за клиента</h2>
-                      <p className="text-xs text-zinc-500">
-                        {monthLabel(monthValue)} ·{" "}
-                        {clientsById.get(selectedClientId) ?? "Неизвестен клиент"}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleExportClientReport}
-                      disabled={isExporting}
-                      className="inline-flex items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-100 shadow-sm transition hover:border-zinc-500 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isExporting ? "Генериране..." : "Изтегли PDF"}
-                    </button>
-                  </div>
-
-                  {/* Summary block */}
-                  <div className="mt-4 grid gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/80 p-3 text-sm text-zinc-100 md:grid-cols-5">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                        Клиент
-                      </span>
-                      <span className="text-sm font-semibold">
-                        {clientsById.get(selectedClientId) ?? "Неизвестен клиент"}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                        Месец
-                      </span>
-                      <span className="text-sm">{monthLabel(monthValue)}</span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                        Общо задачи
-                      </span>
-                      <span className="text-sm font-semibold">{filteredItems.length}</span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                        Общо часове
-                      </span>
-                      <span className="text-sm font-semibold">
-                        {formatHours(clientCostTotals.totalHours)}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                        Обща себестойност
-                      </span>
-                      <span className="text-sm font-semibold">
-                        {clientCostTotals.totalCost == null
-                          ? "—"
-                          : formatCurrency(clientCostTotals.totalCost)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Single table grouped by service */}
-                  <div className="mt-4 overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-950/90">
-                    <table className="min-w-full text-left text-sm">
-                      <thead className="border-b border-zinc-800 bg-zinc-950/95 text-xs uppercase tracking-wide text-zinc-500">
-                        <tr>
-                          <th className="px-3 py-2 font-medium">Услуга</th>
-                          <th className="px-3 py-2 font-medium">Служител</th>
-                          <th className="px-3 py-2 font-medium text-right">Часове</th>
-                          <th className="px-3 py-2 font-medium text-right">Цена на час</th>
-                          <th className="px-3 py-2 font-medium text-right">Себестойност</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {clientServiceGroups.map((group) => (
-                          <Fragment key={group.serviceId}>
-                            {group.rows.map((row: any, index: number) => (
-                              <tr
-                                key={`${row.employeeId}|${row.serviceId ?? "none"}|${index}`}
-                                className="border-b border-zinc-900 last:border-b-0"
-                              >
-                                <td className="px-3 py-1.5 align-top text-sm text-zinc-100">
-                                  {index === 0 ? group.serviceName : ""}
-                                </td>
-                                <td className="px-3 py-1.5 align-top text-sm text-zinc-100">
-                                  {row.employeeName}
-                                </td>
-                                <td className="px-3 py-1.5 text-right text-sm text-zinc-100">
-                                  {formatHours(row.hoursTotal)}
-                                </td>
-                                <td className="px-3 py-1.5 text-right text-sm text-zinc-100">
-                                  {row.hourlyCost == null
-                                    ? "—"
-                                    : formatCurrency(row.hourlyCost)}
-                                </td>
-                                <td className="px-3 py-1.5 text-right text-sm text-zinc-100">
-                                  {row.totalCost == null
-                                    ? "—"
-                                    : formatCurrency(row.totalCost)}
-                                </td>
-                              </tr>
-                            ))}
-                            <tr className="border-t border-zinc-800 bg-zinc-900/80">
-                              <td className="px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-zinc-400">
-                                Общо за услугата
-                              </td>
-                              <td className="px-3 py-1.5" />
-                              <td className="px-3 py-1.5 text-right text-sm font-semibold text-zinc-100">
-                                {formatHours(group.totalHours)}
-                              </td>
-                              <td className="px-3 py-1.5 text-right text-sm text-zinc-500">—</td>
-                              <td className="px-3 py-1.5 text-right text-sm font-semibold text-zinc-100">
-                                {group.totalCost == null
-                                  ? "—"
-                                  : formatCurrency(group.totalCost)}
-                              </td>
-                            </tr>
-                          </Fragment>
-                        ))}
-                        <tr className="border-t border-zinc-800 bg-zinc-950">
-                          <td className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-zinc-400">
-                            Общо за клиента
-                          </td>
-                          <td className="px-3 py-2" />
-                          <td className="px-3 py-2 text-right text-sm font-semibold text-zinc-100">
-                            {formatHours(clientCostTotals.totalHours)}
-                          </td>
-                          <td className="px-3 py-2 text-right text-sm text-zinc-500">—</td>
-                          <td className="px-3 py-2 text-right text-sm font-semibold text-zinc-100">
-                            {clientCostTotals.totalCost == null
-                              ? "—"
-                              : formatCurrency(clientCostTotals.totalCost)}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-              </div>
-            )}
           </>
         )}
       </section>
