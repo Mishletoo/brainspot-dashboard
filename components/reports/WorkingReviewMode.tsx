@@ -85,6 +85,11 @@ function resolveEmployeeName(lookupName: string | undefined, rowEmployeeName: st
   return "Неразпознат служител";
 }
 
+/** Draft/no-task placeholders are visual-only and must not affect aggregates. */
+function isPlaceholderRow(id: string): boolean {
+  return id.startsWith("report-placeholder-");
+}
+
 export function WorkingReviewMode({
   items,
   employees,
@@ -186,14 +191,17 @@ export function WorkingReviewMode({
     employeeHourlyCostById,
   ]);
 
+  const aggregateRows = useMemo(() => rows.filter((row) => !isPlaceholderRow(row.id)), [rows]);
+
   const metrics = useMemo(() => {
+    // Employees still include placeholder-only people so they remain visible in headcount.
     const uniqueEmployees = new Set(rows.map((row) => row.employeeId));
-    const uniqueClients = new Set(rows.map((row) => row.clientId ?? "none"));
-    const totalHours = rows.reduce((acc, row) => acc + row.hours, 0);
-    const taskCount = rows.length;
+    const uniqueClients = new Set(aggregateRows.map((row) => row.clientId ?? "none"));
+    const totalHours = aggregateRows.reduce((acc, row) => acc + row.hours, 0);
+    const taskCount = aggregateRows.length;
     let totalValue: number | null = null;
     if (canViewCompensation) {
-      for (const row of rows) {
+      for (const row of aggregateRows) {
         if (row.totalValue != null && Number.isFinite(row.totalValue)) {
           totalValue = (totalValue ?? 0) + row.totalValue;
         }
@@ -207,7 +215,7 @@ export function WorkingReviewMode({
       employeesCount: uniqueEmployees.size,
       clientsCount: uniqueClients.size,
     };
-  }, [rows, canViewCompensation]);
+  }, [rows, aggregateRows, canViewCompensation]);
 
   const clientSummaries = useMemo(() => {
     const summary = new Map<
@@ -222,7 +230,7 @@ export function WorkingReviewMode({
       }
     >();
 
-    for (const row of rows) {
+    for (const row of aggregateRows) {
       const clientId = row.clientId ?? "none";
       const existing = summary.get(clientId) ?? {
         clientId,
@@ -243,14 +251,14 @@ export function WorkingReviewMode({
     }
 
     return Array.from(summary.values()).sort((a, b) => a.clientName.localeCompare(b.clientName, "bg-BG"));
-  }, [rows, canViewCompensation]);
+  }, [aggregateRows]);
 
   const clientExpandedRows = useMemo(() => {
     if (!expandedClientId) return [];
     const targetClientId = expandedClientId === "none" ? null : expandedClientId;
 
     const grouped = new Map<string, { employeeName: string; hours: number; tasks: number }>();
-    for (const row of rows) {
+    for (const row of aggregateRows) {
       if (row.clientId !== targetClientId) continue;
       const existing = grouped.get(row.employeeId) ?? {
         employeeName: row.employeeName,
@@ -263,13 +271,13 @@ export function WorkingReviewMode({
     }
 
     return Array.from(grouped.values()).sort((a, b) => a.employeeName.localeCompare(b.employeeName, "bg-BG"));
-  }, [rows, expandedClientId]);
+  }, [aggregateRows, expandedClientId]);
 
   const warnings = useMemo(() => {
     const result: string[] = [];
-    const taskGroups = new Map<string, Array<(typeof rows)[number]>>();
+    const taskGroups = new Map<string, Array<(typeof aggregateRows)[number]>>();
 
-    for (const row of rows) {
+    for (const row of aggregateRows) {
       const taskKey = normalizeTaskKey(row.taskText);
       if (!taskKey || taskKey === "без задача") continue;
       const existing = taskGroups.get(taskKey) ?? [];
@@ -277,7 +285,7 @@ export function WorkingReviewMode({
       taskGroups.set(taskKey, existing);
     }
 
-    const missingDescriptionRows = rows.filter((row) => {
+    const missingDescriptionRows = aggregateRows.filter((row) => {
       const taskRaw = row.taskDescription?.trim() ?? "";
       return taskRaw.length === 0 && !row.taskId;
     });
@@ -286,13 +294,13 @@ export function WorkingReviewMode({
       result.push(`Задачи без описание: ${missingDescriptionRows.length} (напр. ${names.join(", ")}).`);
     }
 
-    const heavyHoursRows = rows.filter((row) => row.hours >= 12);
+    const heavyHoursRows = aggregateRows.filter((row) => row.hours >= 12);
     if (heavyHoursRows.length > 0) {
       const sample = heavyHoursRows[0];
       result.push(`Задачи с прекалено много часове: ${heavyHoursRows.length} (напр. "${sample.taskText}" - ${formatHours(sample.hours)} ч).`);
     }
 
-    const shortTextHeavyRows = rows.filter((row) => {
+    const shortTextHeavyRows = aggregateRows.filter((row) => {
       const normalized = normalizeTaskKey(row.taskText);
       return normalized.length > 0 && normalized.length <= 8 && row.hours >= 6;
     });
@@ -319,7 +327,7 @@ export function WorkingReviewMode({
     }
 
     return result.slice(0, 10);
-  }, [rows]);
+  }, [aggregateRows]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -335,7 +343,7 @@ export function WorkingReviewMode({
     return sortDirection === "asc" ? " ▲" : " ▼";
   };
 
-  const showFocusHint = !selectedClientId && !selectedEmployeeId && rows.length >= 40;
+  const showFocusHint = !selectedClientId && !selectedEmployeeId && aggregateRows.length >= 40;
 
   if (items.length === 0) {
     return (

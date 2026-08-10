@@ -2,9 +2,19 @@
 
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { MonthSelect } from "@/components/ui/MonthSelect";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { resolveAppRole, type AppRole } from "@/lib/roles";
+import {
+  buildAvailableMonthKeys,
+  formatBgMonthKey,
+  getCurrentMonthKey,
+  isMonthlyReportLocked,
+  isMonthlyReportSubmitted,
+  parseMonthKey,
+  type ReportMonthKey,
+} from "@/lib/reportMonth";
 
 type ExpiringContract = {
   id: string;
@@ -143,6 +153,19 @@ function monthBounds(date = new Date()) {
     year: date.getFullYear(),
     month: date.getMonth() + 1,
   };
+}
+
+async function fetchAvailableReportMonthKeys(): Promise<ReportMonthKey[]> {
+  const { data, error } = await supabase.from("monthly_reports").select("report_year, report_month");
+  if (error) {
+    return buildAvailableMonthKeys([]);
+  }
+  return buildAvailableMonthKeys(
+    (data ?? []).map((row: { report_year?: number | null; report_month?: number | null }) => ({
+      year: Number(row.report_year),
+      month: Number(row.report_month),
+    }))
+  );
 }
 
 function formatHours(value: number) {
@@ -377,8 +400,7 @@ async function fetchEmployeeDashboardData(employeeId: string | null): Promise<Em
   };
 }
 
-async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
-  const { year, month } = monthBounds();
+async function fetchAdminDashboardData(year: number, month: number): Promise<AdminDashboardData> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayString = today.toISOString().split("T")[0];
@@ -460,6 +482,7 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
           position?: string | null;
           monthly_hours?: number | null;
           hourly_cost?: number | null;
+          is_active?: boolean | null;
         }>;
         error?: string;
       }
@@ -491,11 +514,12 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
     };
   });
 
-  const employees = (adminEmployeesPayload?.employees ?? []).map((row: any) => {
+  const allEmployees = (adminEmployeesPayload?.employees ?? []).map((row: any) => {
     const id = String(row.id ?? "");
     const fullName = `${String(row.first_name ?? "")} ${String(row.last_name ?? "")}`.trim();
     const employeeEmail = typeof row.email === "string" ? row.email : null;
     const position = typeof row.position === "string" && row.position.trim().length > 0 ? row.position.trim() : null;
+    const isActive = row.is_active !== false;
     return {
       id,
       displayName: resolveEmployeeDisplayName({ fullName, employeeEmail, hasEmployeeRecord: true }),
@@ -503,17 +527,23 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
       monthlyTargetHours: normalizeNullableNumeric(row.monthly_hours),
       hourlyRate: normalizeNullableNumeric(row.hourly_cost),
       employeeEmail,
+      isActive,
     };
   });
-  const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+  // Operational month metrics count active employees only
+  const employees = allEmployees.filter((employee) => employee.isActive);
+  const employeeById = new Map(allEmployees.map((employee) => [employee.id, employee]));
+  const activeEmployeeById = new Map(employees.map((employee) => [employee.id, employee]));
 
   const monthlyReports = (monthlyReportsResult.data ?? []).map((row: any) => {
     const employeeRelation = toRelationObject<{ first_name?: unknown; last_name?: unknown; email?: unknown }>(row.employees);
     const employeeId = String(row.employee_id ?? "");
     const employeeFromMap = employeeById.get(employeeId);
     const status = String(row.status ?? "draft").toLowerCase().trim();
-    const submittedAt = typeof row.submitted_at === "string" && row.submitted_at.trim().length > 0;
-    const lockedAt = typeof row.locked_at === "string" && row.locked_at.trim().length > 0;
+    const submittedAtRaw = typeof row.submitted_at === "string" ? row.submitted_at : null;
+    const lockedAtRaw = typeof row.locked_at === "string" ? row.locked_at : null;
+    const submittedAt = typeof submittedAtRaw === "string" && submittedAtRaw.trim().length > 0;
+    const lockedAt = typeof lockedAtRaw === "string" && lockedAtRaw.trim().length > 0;
     const employeeName = resolveEmployeeDisplayName({
       fullName:
         employeeFromMap?.displayName && employeeFromMap.displayName !== "Служител"
@@ -529,6 +559,8 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
       status,
       submittedAt,
       lockedAt,
+      submitted_at: submittedAtRaw,
+      locked_at: lockedAtRaw,
       employeeName,
     };
   });
@@ -548,6 +580,9 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
       .filter((report) => report.id && report.employeeId)
       .map((report) => [report.id, report.employeeId]),
   );
+  const reportByEmployeeId = new Map(
+    monthlyReports.filter((report) => report.employeeId).map((report) => [report.employeeId, report]),
+  );
 
   const taskCountByEmployee = new Map<string, number>();
   (workItemsResult.data ?? []).forEach((row: any) => {
@@ -560,6 +595,7 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
   });
 
   const topEmployees: AdminTopEmployee[] = [...taskCountByEmployee.entries()]
+    .filter(([employeeId]) => activeEmployeeById.has(employeeId))
     .map(([employeeId, count]) => ({
       id: employeeId,
       name:
@@ -574,20 +610,40 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
     .sort((a, b) => b.taskCount - a.taskCount)
     .slice(0, 5);
 
-  const unsubmittedReports = monthlyReports.filter((report) => {
-    const isSubmitted = report.submittedAt || ["submitted", "pending_review", "approved"].includes(report.status);
-    const isLocked = report.lockedAt || ["locked", "approved", "finalized"].includes(report.status);
-    return !isSubmitted && !isLocked;
+  // Compliance: every active employee for the selected month.
+  // Missing report row OR draft => unsubmitted.
+  // submitted_at / submitted|approved|finalized / locked_at => submitted (not unsubmitted).
+  const unsubmittedReports = employees.filter((employee) => {
+    const report = reportByEmployeeId.get(employee.id);
+    if (!report) return true;
+    return !isMonthlyReportSubmitted({
+      status: report.status,
+      submitted_at: report.submitted_at,
+      locked_at: report.locked_at,
+    });
   }).length;
 
   const waitingReview = monthlyReports.filter((report) => {
-    const isSubmitted = report.submittedAt || ["submitted", "pending_review", "approved"].includes(report.status);
-    const isLocked = report.lockedAt || ["locked", "approved", "finalized"].includes(report.status);
-    return isSubmitted && !isLocked;
+    if (!activeEmployeeById.has(report.employeeId)) return false;
+    const isSubmitted = isMonthlyReportSubmitted({
+      status: report.status,
+      submitted_at: report.submitted_at,
+      locked_at: report.locked_at,
+    });
+    const isLocked = isMonthlyReportLocked({
+      status: report.status,
+      locked_at: report.locked_at,
+    });
+    // Waiting review = submitted but not yet locked (exclude pure drafts / missing)
+    const hasSubmitSignal =
+      report.submittedAt || ["submitted", "pending_review", "approved"].includes(report.status);
+    return hasSubmitSignal && isSubmitted && !isLocked;
   }).length;
 
-  const activeEmployees = new Set([...taskCountByEmployee.keys()]);
-  const employeesWithoutActivity = employees.filter((employee) => !activeEmployees.has(employee.id)).length;
+  // No activity = active employee with zero work_report_items for selected month
+  const employeesWithoutActivity = employees.filter(
+    (employee) => (taskCountByEmployee.get(employee.id) ?? 0) === 0
+  ).length;
 
   const upcomingInvoices: UpcomingInvoice[] = (upcomingInvoicesResult.data ?? []).map((row: any) => ({
     id: String(row.id ?? ""),
@@ -600,9 +656,14 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
 
   const pendingReports: PendingReport[] = monthlyReports
     .filter((report) => {
-      const isSubmitted = report.submittedAt || ["submitted", "pending_review", "approved"].includes(report.status);
-      const isLocked = report.lockedAt || ["locked", "approved", "finalized"].includes(report.status);
-      return isSubmitted && !isLocked;
+      if (!activeEmployeeById.has(report.employeeId)) return false;
+      const hasSubmitSignal =
+        report.submittedAt || ["submitted", "pending_review", "approved"].includes(report.status);
+      const isLocked = isMonthlyReportLocked({
+        status: report.status,
+        locked_at: report.locked_at,
+      });
+      return hasSubmitSignal && !isLocked;
     })
     .map((report) => ({
       id: report.id,
@@ -669,25 +730,30 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
     const hours = normalizeNumeric(row.hours);
     const cost = hourlyRate != null ? hours * hourlyRate : null;
 
-    const employeeWorkload =
-      workloadByEmployeeId.get(employeeId) ??
-      {
-        employeeId,
-        employeeName,
-        position: null,
-        totalTasks: 0,
-        totalWorkedHours: 0,
-        monthlyTargetHours: null,
-        activeClientIds: new Set<string>(),
-      };
-    employeeWorkload.totalTasks += 1;
-    employeeWorkload.totalWorkedHours += hours;
-    const clientId = typeof row.client_id === "string" ? row.client_id : row.client_id != null ? String(row.client_id) : "";
-    if (clientId) {
-      employeeWorkload.activeClientIds.add(clientId);
+    if (activeEmployeeById.has(employeeId) || workloadByEmployeeId.has(employeeId)) {
+      const employeeWorkload =
+        workloadByEmployeeId.get(employeeId) ??
+        {
+          employeeId,
+          employeeName,
+          position: null,
+          totalTasks: 0,
+          totalWorkedHours: 0,
+          monthlyTargetHours: null,
+          activeClientIds: new Set<string>(),
+        };
+      employeeWorkload.totalTasks += 1;
+      employeeWorkload.totalWorkedHours += hours;
+      const clientId = typeof row.client_id === "string" ? row.client_id : row.client_id != null ? String(row.client_id) : "";
+      if (clientId) {
+        employeeWorkload.activeClientIds.add(clientId);
+      }
+      if (activeEmployeeById.has(employeeId)) {
+        workloadByEmployeeId.set(employeeId, employeeWorkload);
+      }
     }
-    workloadByEmployeeId.set(employeeId, employeeWorkload);
 
+    const clientId = typeof row.client_id === "string" ? row.client_id : row.client_id != null ? String(row.client_id) : "";
     const normalizedClientId = clientId || "none";
     const clientRelation = toRelationObject<{ name?: unknown }>(row.clients);
     const clientName =
@@ -795,6 +861,8 @@ export default function Home() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [selectedMonthKey, setSelectedMonthKey] = useState<ReportMonthKey>(() => getCurrentMonthKey());
+  const [availableMonths, setAvailableMonths] = useState<ReportMonthKey[]>(() => [getCurrentMonthKey()]);
   const [employeeData, setEmployeeData] = useState<EmployeeDashboardData>({
     myTasks: 0,
     inProgress: 0,
@@ -838,7 +906,14 @@ export default function Home() {
           const employeeDashboard = await fetchEmployeeDashboardData(roleDetails.employeeId);
           setEmployeeData(employeeDashboard);
         } else {
-          const adminDashboard = await fetchAdminDashboardData();
+          const months = await fetchAvailableReportMonthKeys();
+          setAvailableMonths(months);
+          const monthKey = months.includes(selectedMonthKey) ? selectedMonthKey : months[0] ?? getCurrentMonthKey();
+          if (monthKey !== selectedMonthKey) {
+            setSelectedMonthKey(monthKey);
+          }
+          const { year, month } = parseMonthKey(monthKey);
+          const adminDashboard = await fetchAdminDashboardData(year, month);
           setAdminData(adminDashboard);
           setExpandedClientRows({});
         }
@@ -850,9 +925,12 @@ export default function Home() {
     };
 
     void loadDashboard();
-  }, []);
+    // selectedMonthKey drives admin month-scoped metrics only
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- employee view ignores month selector
+  }, [selectedMonthKey]);
 
   const isEmployeeView = roleContext.role === "employee";
+  const selectedMonthLabel = formatBgMonthKey(selectedMonthKey);
 
   const monthStatusLabel =
     employeeData.monthStatus === "locked"
@@ -877,11 +955,25 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Табло</h1>
-        <p className="text-sm text-[var(--color-bs-muted)]">
-          {isEmployeeView ? "Вашият продуктивен преглед за текущия месец." : "Оперативен преглед за екипа и бизнеса."}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-semibold text-[var(--color-bs-text)]">Табло</h1>
+          <p className="text-sm text-[var(--color-bs-muted)]">
+            {isEmployeeView
+              ? "Вашият продуктивен преглед за текущия месец."
+              : `Оперативен преглед за екипа и бизнеса · ${selectedMonthLabel}.`}
+          </p>
+        </div>
+        {!isEmployeeView && (
+          <div className="min-w-[180px] rounded-xl border border-[var(--color-bs-border-soft)] bg-white/5 px-3 py-2">
+            <MonthSelect
+              id="admin-dashboard-month"
+              value={selectedMonthKey}
+              months={availableMonths}
+              onChange={setSelectedMonthKey}
+            />
+          </div>
+        )}
       </div>
 
       {isLoading && (
@@ -1064,7 +1156,7 @@ export default function Home() {
             </div>
             {adminData.teamWorkload.length === 0 ? (
               <EmptyState
-                title="Няма данни за натовареност за текущия месец"
+                title="Няма данни за натовареност за избрания месец"
                 description="След добавяне на работни записи ще видите оперативните метрики по служители."
                 actionHref="/work-reports"
                 actionLabel="Отвори отчети"
@@ -1115,7 +1207,7 @@ export default function Home() {
             </div>
             {adminData.clientCostBoard.length === 0 ? (
               <EmptyState
-                title="Няма данни за клиентски разход за текущия месец"
+                title="Няма данни за клиентски разход за избрания месец"
                 description="След добавяне на работни записи ще се визуализира себестойността по клиенти."
                 actionHref="/work-reports"
                 actionLabel="Отвори отчети"
@@ -1210,7 +1302,7 @@ export default function Home() {
                 <div className="rounded-lg border border-[var(--color-bs-border-soft)] bg-white/5 p-3">
                   <p className="text-xs uppercase tracking-wide text-[var(--color-bs-subtle)]">Служители с най-много задачи</p>
                   {adminData.teamOverview.topEmployees.length === 0 ? (
-                    <p className="mt-1 text-sm text-[var(--color-bs-muted)]">Няма данни за текущия месец.</p>
+                    <p className="mt-1 text-sm text-[var(--color-bs-muted)]">Няма данни за избрания месец.</p>
                   ) : (
                     <ul className="mt-2 space-y-1 text-sm text-[var(--color-bs-muted)]">
                       {adminData.teamOverview.topEmployees.map((employee) => (

@@ -6,6 +6,16 @@ import { supabase } from "@/lib/supabaseClient";
 import { WorkingReviewMode, type WorkingReviewItem } from "@/components/reports/WorkingReviewMode";
 import { buildReportsPdfData, type ReportsPdfSourceRow } from "@/components/reports/pdf/reportPdfDataBuilder";
 import { exportReportsPdf } from "@/components/reports/pdf/exportReportsPdf";
+import { MonthSelect } from "@/components/ui/MonthSelect";
+import {
+  buildAvailableMonthKeys,
+  formatBgMonthKey,
+  getCurrentMonthKey,
+  isMonthlyReportLocked,
+  isMonthlyReportSubmitted,
+  parseMonthKey,
+  type ReportMonthKey,
+} from "@/lib/reportMonth";
 
 type Employee = {
   id: string;
@@ -50,7 +60,7 @@ type ClientEmployeeCostRow = {
 };
 
 function monthBounds(monthValue: string) {
-  const [year, month] = monthValue.split("-").map(Number);
+  const { year, month } = parseMonthKey(monthValue);
   const start = new Date(year, month - 1, 1);
   const end = new Date(year, month, 0);
 
@@ -110,10 +120,7 @@ function resolveEmployeeDisplayName({
 }
 
 function monthLabel(monthValue: string) {
-  const [year, month] = monthValue.split("-");
-  const date = new Date(Number(year), Number(month) - 1, 1);
-  if (Number.isNaN(date.getTime())) return monthValue;
-  return date.toLocaleDateString("bg-BG", { month: "long", year: "numeric" });
+  return formatBgMonthKey(monthValue);
 }
 
 function parseHours(value: unknown) {
@@ -121,20 +128,19 @@ function parseHours(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-const REPORT_SUBMITTED_STATUSES = new Set(["submitted", "pending_review", "approved"]);
-const REPORT_LOCKED_STATUSES = new Set(["locked", "approved", "finalized"]);
 function reportIsSubmitted(row: Record<string, unknown>): boolean {
-  const status = String(row.status ?? "").toLowerCase().trim();
-  const submittedAt = row.submitted_at;
-  const hasSubmittedAt = typeof submittedAt === "string" && submittedAt.trim().length > 0;
-  return hasSubmittedAt || REPORT_SUBMITTED_STATUSES.has(status);
+  return isMonthlyReportSubmitted({
+    status: typeof row.status === "string" ? row.status : null,
+    submitted_at: typeof row.submitted_at === "string" ? row.submitted_at : null,
+    locked_at: typeof row.locked_at === "string" ? row.locked_at : null,
+  });
 }
 
 function reportIsLocked(row: Record<string, unknown>): boolean {
-  const status = String(row.status ?? "").toLowerCase().trim();
-  const lockedAt = row.locked_at;
-  const hasLockedAt = typeof lockedAt === "string" && lockedAt.trim().length > 0;
-  return hasLockedAt || REPORT_LOCKED_STATUSES.has(status);
+  return isMonthlyReportLocked({
+    status: typeof row.status === "string" ? row.status : null,
+    locked_at: typeof row.locked_at === "string" ? row.locked_at : null,
+  });
 }
 
 function formatHours(value: number) {
@@ -149,11 +155,8 @@ function formatCurrency(value: number | null | undefined) {
 export default function ReportsPage() {
   const [reportMode, setReportMode] = useState<"official" | "working">("official");
   const [currentRole, setCurrentRole] = useState<AppRole>("employee");
-  const [monthValue, setMonthValue] = useState(() => {
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    return `${now.getFullYear()}-${month}`;
-  });
+  const [monthValue, setMonthValue] = useState<ReportMonthKey>(() => getCurrentMonthKey());
+  const [availableMonths, setAvailableMonths] = useState<ReportMonthKey[]>(() => [getCurrentMonthKey()]);
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -470,12 +473,64 @@ export default function ReportsPage() {
         })
         .filter((item) => item.employeeId);
 
-      setItems(mappedItems);
+      // Ensure employees with a monthly_report but zero work items still appear in Working Review
+      const employeesWithItems = new Set(mappedItems.map((item) => item.employeeId));
+      const placeholderItems: WorkItemRow[] = [];
+      for (const [reportId, reportRow] of reportById.entries()) {
+        const employeeId = reportIdToEmployeeId.get(reportId) ?? "";
+        if (!employeeId || employeesWithItems.has(employeeId)) continue;
+        const isSubmitted = reportIsSubmitted(reportRow);
+        const isLocked = reportIsLocked(reportRow);
+        const monthReviewStatus: WorkItemRow["monthReviewStatus"] = isLocked
+          ? "locked"
+          : isSubmitted
+            ? "submitted"
+            : "draft";
+        placeholderItems.push({
+          id: `report-placeholder-${reportId}`,
+          employeeId,
+          employeeName:
+            reportEmployeeDisplayNameById.get(employeeId) ??
+            resolveEmployeeDisplayName({
+              fullName: "",
+              employeeEmail: null,
+            }),
+          clientId: null,
+          serviceId: null,
+          taskId: null,
+          taskDescription: "Няма задачи в отчета",
+          notes: "",
+          hours: 0,
+          activityDate: null,
+          monthReviewStatus,
+          isSubmitted,
+        });
+      }
+
+      setItems([...mappedItems, ...placeholderItems]);
       setIsLoading(false);
     };
 
     loadMonthlyData();
   }, [monthValue, employees]);
+
+  useEffect(() => {
+    const loadAvailableMonths = async () => {
+      const { data } = await supabase.from("monthly_reports").select("report_year, report_month");
+      const months = buildAvailableMonthKeys(
+        (data ?? []).map((row: { report_year?: number | null; report_month?: number | null }) => ({
+          year: Number(row.report_year),
+          month: Number(row.report_month),
+        }))
+      );
+      setAvailableMonths(months);
+      if (!months.includes(monthValue) && months.length > 0) {
+        setMonthValue(months[0]);
+      }
+    };
+    void loadAvailableMonths();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only bootstrap available months once
+  }, []);
 
   const clientsById = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients]);
   const servicesById = useMemo(() => new Map(services.map((s) => [s.id, s.name])), [services]);
@@ -529,7 +584,12 @@ export default function ReportsPage() {
   const filteredItems = useMemo(
     () =>
       items.filter((item) => {
-        if (!item.isSubmitted) return false;
+        // Official: submitted/locked only (drafts excluded)
+        const isOfficialVisible =
+          item.isSubmitted || item.monthReviewStatus === "locked" || item.monthReviewStatus === "submitted";
+        if (!isOfficialVisible) return false;
+        // Placeholder rows (no real tasks) stay out of official aggregates
+        if (item.id.startsWith("report-placeholder-")) return false;
         if (selectedEmployeeId && item.employeeId !== selectedEmployeeId) return false;
         if (selectedClientId && item.clientId !== selectedClientId) return false;
         return true;
@@ -540,7 +600,10 @@ export default function ReportsPage() {
   const officialItemsForPdfBase = useMemo(
     () =>
       items.filter((item) => {
-        if (!item.isSubmitted) return false;
+        const isOfficialVisible =
+          item.isSubmitted || item.monthReviewStatus === "locked" || item.monthReviewStatus === "submitted";
+        if (!isOfficialVisible) return false;
+        if (item.id.startsWith("report-placeholder-")) return false;
         if (selectedEmployeeId && item.employeeId !== selectedEmployeeId) return false;
         return true;
       }),
@@ -560,6 +623,7 @@ export default function ReportsPage() {
   const workingItemsForPdfBase = useMemo(
     () =>
       items.filter((item) => {
+        if (item.id.startsWith("report-placeholder-")) return false;
         if (selectedEmployeeId && item.employeeId !== selectedEmployeeId) return false;
         return true;
       }),
@@ -865,15 +929,12 @@ export default function ReportsPage() {
 
           <div className="flex flex-wrap items-end gap-3">
             <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
-              <label htmlFor="month" className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">
-                Месец
-              </label>
-              <input
-                id="month"
-                type="month"
+              <MonthSelect
+                id="reports-month"
+                variant="zinc"
                 value={monthValue}
-                onChange={(event) => setMonthValue(event.target.value)}
-                className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+                months={availableMonths}
+                onChange={setMonthValue}
               />
             </div>
 
